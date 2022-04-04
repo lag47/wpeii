@@ -1,0 +1,18 @@
+\message{ !name(qwire.tex)}
+\message{ !name(qwire.tex) !offset(-2) }
+The Qwire language is parameterized by a host language.
+In this sense, Qwire really describes a family of languages and not a single one.
+However, with only a few assumptions about the host language, namely that it has booleans, product types, and is strongly normalizing \ls{big assumption can’t brush past this easily}, we can give a formal semantics to Qwire.
+
+\subsection{Introduction to Qwire}
+
+Qwire breaks up reasoning about quantum programs into three levels.
+At the top, we have the host language capable of everything that a strongly normalizing functional programming language can do.
+We require that this host level have boolean and pair types, and we extend the host language with a new type of circuits.
+Then we have the circuit layer, which is isolated into a special modality.
+It is only in that modality that we can directly manipulate the final level, wires.
+Much like in our original introduction of quantum programming, circuits are made up of quantum gates and wires.
+Unlike in the quantum lambda calculus, wires and qubits are not standard terms that can be manipulated anywhere in the language.
+We cannot create functions from qubits to qubits in Qwire.
+
+\message{ !name(qwire.tex) !offset(-18) }

@@ -1,0 +1,227 @@
+\subsection{Introduction to Quantum Lambda Calculus}
+For the most part, the Quantum Lambda Calculus acts just like a linearly typed lambda calculus.
+We will discuss more the the specifics of that in Section~\todo{reference section}, but for now, what is important to know is that linear types allow static analysis of resource consumption, inlcuding usage of qubits.
+The Quantum Lambda Calculus contains the basic syntax structures that you would expect in a simply typed lambda calculus.
+
+\todo{create the figure here}
+
+In addition to these standard constructs, the Quantum Lambda Calculus has several specific constructs.
+\begin{itemize}
+\item The \inlinecoq{new} keyword prepares a new qubit starting in either the state $\ket{0}$ or $\ket{1}$.
+\item The \inlinecoq{meas} keyword measures a qubit, consumes it, and produces a boolean.
+\item The application of one of a preset collection of quantum gates \inlinecoq{U} like the hadamard gate \inlinecoq{H}.
+\end{itemize}
+
+For types, we have a standard collection of linear types.
+\todo{create figure}
+Note that the $\multimap$ operator indicates a linear function type and the $!$, pronounced bang, operator indicates that the value is resuseable.
+The Quantum Lambda Calculus also provides a \inlinecoq{qubit} type.
+Quantum circuits are given types of linear functions over qubits.
+
+\begin{lstlisting}[style=customcoq]
+let entangle : qubit <@ $\otimes$ @> qubit :=
+    let x := new 0 in
+    let y := new 0 in
+    let x := H x in
+    CNOT (x, y)
+\end{lstlisting}
+
+The Quantum Lambda Calculus allows programmers to freely mix gate applications and classical control flow.
+We can demonstrate this in the below program which takes two single qubit function nad two qubits as arguments, and decides which function to actually apply based on the measurement of the first qubit.
+\begin{lstlisting}[style=customcoq]
+let controlled : !(qubit <@$\multimap$@> qubit) <@$\multimap$@> !(qubit <@$\multimap$@> qubit) <@$\multimap$@> qubit <@$\multimap$@> qubit <@$\multimap$@> qubit :=
+    <@$\lambda$@> g1 g2 x y <@$\Rightarrow$@>
+        let b : bool := meas x in
+        if b then g1 y else g2 y
+\end{lstlisting}
+Note that each function has a $!$ type.
+Without it, the above function would be ill-typed.
+Because the Quantum Lambda Calculus is linearly typed, values can only be used exactly once by default.
+We need that to allow the function to not be applied in certain cases.
+
+The function that we just wrote requires dynamic lifting, even though nothing in the syntax or types directly makes that clear.
+On the one hand, this is problematic because it gives no direct way to separate out the expensive dynamic lifts from the relatively inexpensive static lifts.
+On the other hand, this simple approach allows the Quantum Lambda Calculus to function as a strongly typed quantum programming language while only needing the syntax of a standard lambda calculus.
+
+
+\subsection{Quantum Lambda Calculus Type System}
+The Quantum Lambda Calculus type system relies on a subtyping relation in order to lessen the burden of using exponential types where linear ones are required.
+$\tau_1 <: \tau_2$ should be read as $\tau_1$ is a subtype of $\tau_2$, or "we can use a $\tau_1$ anywhere that a $\tau_2$ required".
+
+First, we will see how subtyping works with the interaction of qubits and $!$ types.
+\begin{align*}
+    \inferrule*[RIGHT=qubit]{n = 0 \rightarrow m = 0}{!^nqubit <: !^m qubit}
+\end{align*}
+The arithmetic condition in this rule just enforces that if the left type is not resusable, then the right type must also not be reusable.
+Each subtyping rule has that condition.
+For example, this inference rule lets us infer that $!qubit<:qubit$.
+This makes sense, as a resusable qubit should be able to be used in any context that requires a qubit.
+However, you \textbf{cannot} prove $qubit <: !qubit$.
+This makes sense, as a context which requires a reusable qubit might use it twice, something that is not valid to do for a nonreusable qubit. 
+The rule for products and sums has a similar condition, and is otherwise covariant in its arguments.
+\todo{maybe boolean or something would be a better choice for this example, !qubit should not be an inhabitable type unless you have some weird constants}
+\begin{mathpar}
+    \inferrule*[RIGHT=\otimes]{n = 0 \rightarrow m = 0\\ A_1 <: B_1 \\ A_2 <: B_2}{!^n (A_1 \otimes A_2) <: !^m (B_1 \otimes B_2)}
+    \and
+    \inferrule*[RIGHT=\oplus]{n = 0 \rightarrow m = 0\\ A_1 <: B_1 \\ A_2 <: B_2}{!^n (A_1 \oplus A_2) <: !^m (B_1 \otimes B_2)}
+\end{mathpar}
+
+Finally, there is a subtyping rule for functions.
+\begin{mathpar}
+    \inferrule*[Right=$\multimap$]
+        {n = 0 \rightarrow m = 0 \\ B_1 <: A_1 \\ A_2 <: B_2}
+        {!^n(A_1 \multimap A_2) <: !^m (B_1 \multimap B_2)}
+\end{mathpar}
+For readers familiar with subtyping function types, this is a straightforward, contravariant condition.
+For those unfamiliar, recall that the type on the left is the more specific type, and therefore enforces a stronger condition of the code.
+Functions that can relax restrictions on their input or strengthen conditions on their output satisfy a stronger condition than the supertype requires.
+
+This subtyping relation is used in the general type system when we need to type variables or constants.
+The typing judgement for the Quantum Lambda Calculus has the following shape, typical of typing derivations,
+$\Omega \vdash e : A$.
+$\Omega$ is a typing context, $e$ is a term, and $A$ is a type.
+In these rules, we will denote a typing context which contains only reusable variables as $!\Omega$, and will denote the set of variable names used in a context as $|\Omega|$.
+The variable typing derivation makes use of this.
+\begin{mathpar}
+    \inferrule*[Right=VAR]
+        {A <: B}
+        {\Omega, x : A \vdash x : B}
+\end{mathpar}
+Note the presence of the $\Omega$ in the conclusion of this rule.
+This shows that we can actually throw away variables without using them.
+In the rules dealing the the product type, we will see how the type system prevents us from reusing nonreusable variables.
+
+\begin{mathpar}
+    \inferrule*[Right=$\otimes I$]
+        {!\Omega_1, \Omega_2 \vdash e_1 : !^nA_1 \\ !\Omega_1, \Omega_3 \vdash e_2 : !^nA_2}
+        {!\Omega_1, \Omega_2, \Omega_3 \vdash (e_1,e_2) : !^n(A_1 \otimes A_2)}
+    \and
+    \inferrule*[Right=$\otimes E$]
+        {!\Omega_1, \Omega_2 \vdash e_1 : !^n(A_1 \otimes A_2) \\ !\Omega_1, \Omega_3, x_1 : !^nA_1,x_2 : !^nA_2  \vdash e_2 : B}
+        {!\Omega_1, \Omega_2, \Omega_3 \vdash let (x,y) = e_1 in e_2 : B}
+\end{mathpar}
+Note how the context of reusable variables, $!\Omega_1$, itself gets to be reused, while the nonreusable contexts are each only used once in the hypotheses.
+We can view the $\otimes I$ rule as saying if you can construct $e_1 : !^n A_1$ by using $!\Omega_1$ and consuming the values in $\Omega_2$,
+and you can construct $e_2 : !^n A_2$ by using $!\Omega_1$ and consuming the values in $\Omega_2$, then you can construct the product and it will have type $!^n(A_1 \otimes A_2)$.
+This means that variables bound in $\Omega_2$ cannot be used in the construction of $e_2$ and the variables bound in $\Omega_3$ cannot be used in the construction of $e_1$.
+
+With this rule, we can derive the following typing $x : \qubit, y : \qubit \vdash (x,y) : \qubit \otimes \qubit$.
+We cannot derive $x : \qubit \vdash (x,x) : \qubit \otimes \qubit$, because you cannot separate the context into two disjoint pieces that each have $x$ bound.
+The $\otimes E$ rule maintains a similar distinction, where $\Omega_2$ can be used only in the construction of $e_1$, $\Omega_3$ can be used only in the construction of $e_2$ and $!\Omega_1$ can be used in both.
+
+The function application rule also works similarly.
+\begin{mathpar}
+    \inferrule*[Right=$\otimes I$]
+        {!\Omega_1, \Omega_2 \vdash e_1 : A \multimap B \\ !\Omega_1, \Omega_3 \vdash e_2 : A}
+        {!\Omega_1, \Omega_2, \Omega_3 \vdash e_1\;e_2 : B}
+\end{mathpar}
+The construction of functions is slightly more complicated.
+The type system needs to make sure that reusable functions don't capture nonreusable variables.
+As such, the rule for nonreusable functions is very simple.
+\begin{mathpar}
+    \inferrule*[Right=$\lambda$]
+        {\Omega, x : A \vdash e : B}
+        {\Omega \vdash \lambda x : A. e : A \multimap B}
+\end{mathpar}
+For reusable functions, we add an extra condition that no nonreusable variables are captured by the function.
+\begin{mathpar}
+    \inferrule*[Right=$!\lambda$]
+        {!\Omega_1, \Omega_2, x : A \vdash e : B \\ FV(e) \cap |\Omega_2| = \emptyset}
+        {!\Omega_1, \Omega_2 \vdash \lambda x : A. e : !^n(A \multimap B)}
+\end{mathpar}
+\todo{introduce the list type constructor}
+\todo{a bit more transition here}
+
+\subsection{Running example}
+To implement the functional entanglement in full generality, we need to use lists of qubits to represent the $n$ qubit input and output wires.
+Given this, we can define the extended hadamard gate as a function from lists of qubits to lists of qubits, and the initialization of an $n$ qubit wire in the 0 state as a function from positive integers to lists of qubits.
+To stay within the types formalized in the Quantum Lambda Calculus paper, we represent positive integers as lists of the unit type, where \inlinecoq{nil} is 1 and \inlinecoq{Cons (_,y)} is $1 + y$.
+\begin{lstlisting}[style=customcoq]
+type qlist := list qubit
+
+let rec extended_had (l : qlist) : qlist :=
+    match unfold x with
+    | inl _ => Cons (hadamard x, nil)
+    | inr (x,l') => Cons (hadamard x, extended_had l)
+    end
+
+let rec extended_zero (list unit) : list qubit :=
+    match unfold x with
+    | inl _ => Cons (hadamard x, nil)
+    | inr (_,l') => Cons (new 0, extended_zero l')
+    end
+\end{lstlisting}
+
+Given the  above functions, we create a functional entanglement state given a number $n$ encoded as a list of units, and a quantum oracle represented as a function that takes and returns pairs of lists of qubits.
+\begin{lstlisting}[style=customcoq]
+let functional_entanglement (n : list unit) (Qf : qlist<@$\otimes$@>qlist <@$\multimap$@> qlist<@$\otimes$@> qlist) : qlist <@$\otimes$@> qlist :=
+    let x = extended_zero n in
+    let y = extended_zero n in 
+    let x = extended_had x in
+    Qf (x,y)
+\end{lstlisting}
+While the above function does allow us to create a functional entanglement state, the type system has no way of ensuring that \inlinecoq{Qf} actually is written to take in two $n$ length lists of qubits.
+Alternatively, we could have chosen to represent multi-qubit wires as tuples of qubits, but this would have forced us to write a different functional entanglement function for each size.
+However, most practical languages lack support for dependent types and programmers are used to dealing with bugs that come from unmet size expectactions.
+
+
+\subsection{Quantum Lambda Calculus Type Operational Semantics}
+
+When not dealing directly with quantum computation primitives, the Quantum Lambda Calculus behaves just like any other lambda calculus.
+It has a step relation that behaves as you would expect when it comes to operations like function application.
+However, the semantics needs to be able to handle the allocation of qubits, gate applications and measurements. 
+This requires the semantics to handle state and probability.
+The Quantum Lambda Calculus keeps track of this using \textit{quantum closures}.
+\begin{definition}
+    A quantum closure is a three element tuple $[Q,X,e]$ where, with some fixed natural number $n$,
+    \begin{itemize}
+        \item $Q$ is an $n$ qubit quantum state
+        \item $X$ is a collection of distinct variables $x_1,..., x_n$, written as $\ket{x_1,..., x_n}$
+        \item $e$ is a term in the Quantum Lambda Calculus
+    \end{itemize}
+    The variables in $X$ represent the names of the qubits that make of the quantum state system $Q$.
+\end{definition}
+The small step semantics is a relation over quantum closures. 
+Intuitively, $[Q,X,e] \Rightarrow_{p} [Q',X',e']$ means that the state $Q$, variable collection $X$, and term $e$ evolve to the state $Q'$, variable collection $X'$ and term $e'$ with probability $p$.
+
+\[ 
+    [Q,X, G \ket{x_{j_1},...,x_{j_k}}] \Rightarrow_{1} [Q',X, \ket{x_{j_1},...,x_{j_k}}]
+\]
+where $x_{j_1},...,x_{j_n}$ are a sequence of qubit variables bound in $X$, and $Q'$ is the resulting quantum state from applying $G$ to the specified qubits.
+To evaluate the \inlinecoq{new} keyword, we extend the quantum state $Q$ with a new qubit using the tensor product.
+We also extend the list of bound qubit variables with a new variable name, and return that identifier for the program to pass around.
+\[
+    [Q,X, new 0] \Rightarrow_1 [Q \otimes \ket{0}, \ket{x_1,...,x_n,x_{n+1}}, x_{n+1}]    
+\]
+\[
+    [Q,X, new 1] \Rightarrow_1 [Q \otimes \ket{1}, \ket{x_1,...,x_n,x_{n+1}}, x_{n+1}]    
+\]
+
+The \inlinecoq{meas} keyword is the only probabilistic operation in the language.
+To evaluate \inlinecoq{meas x_i}, we first split the quantum state $Q$ into $aQ_0 + bQ_1$, where the $Q_0$ is the state $Q$ evolves to if the measurement returns $0$ and $Q_1$ is the state $Q$ evolves to if the measurement returns $1$.
+
+\[
+    [aQ_0+bQ_1, X, meas x_i] \Rightarrow_{a^2} [Q_0,X,0]
+\]
+\[
+    [aQ_0+bQ_1, X, meas x_i] \Rightarrow_{b^2} [Q_1,X,0]
+\]
+\subsection{Type System Guarantees}
+In order to discuss the theoretical guarantees of this language, we first must introduce a generalization of the multistep relation for probabilistic programs, as well as a way of typing quantum closures, and a notion of values.
+Intuitively, this reachability relation captures the set of possibly reachable quantum closures from a given start, and a quantum closure can be given the type of $e$.
+\begin{definition}
+The \textit{reachability} relation $\rightsquigarrow$ is defined as the reflexive transitive closure of the set of pairs of quantum closures $([Q,X,e], [Q'.X',e'])$ such that there exists some number $p$ where $[Q,X,e]\Rightarrow_p [Q'.X',e']$.
+This includes when the number $p$ is 0, meaning that this is an overapproximation of the states that the quantum closure has some probability of evolving to.
+\end{definition}
+\begin{definition}
+    The quantum closure $[Q, \ket{x_1,...,x_n}, e]$ has type $\tau$, typeset as $[Q, \ket{x_1,...,x_n}, e]:\tau$, if $x_1 : qubit, ..., x_n : qubit \vdash e : \tau$.
+\end{definition}
+\begin{definition}
+    A term $v$ is a value if it is either an abstraction $\lambda x. e$, a constant, a variable, a pair $(v_1,v_2)$ where both elements are values, or $inl(v')$ or $inr(v')$  where $v'$ is a value.
+\end{definition}
+\begin{theorem}[Preservation]
+    If $[Q,X,e] : \tau$ and $[Q,X,e] \rightsquigarrow [Q',X',e']$, then $[Q',X',e'] : \tau$.
+\end{theorem}
+\begin{theorem}[Progress]
+    If $[Q,X,e] : \tau$, then either $e$ is a value, or there exists some set of quantum closures $\{[Q_i,X_i,e_i]\}$ such that for each $i$, $[Q,X,e]\Rightarrow_{p_i}[Q_i,X_i,e_i]$ and $\sum_{i}p_i=1$.
+\end{theorem}

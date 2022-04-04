@@ -1,0 +1,162 @@
+\documentclass[acmsmall,screen,review]{acmart}
+
+%% Bibliography style
+\bibliographystyle{ACM-Reference-Format}
+%% Citation style
+%% Note: author/year citations are required for papers published as an
+%% issue of PACMPL.
+\citestyle{acmauthoryear}   %% For author/year citations
+
+\setcopyright{none}
+\settopmatter{printacmref=false}
+\settopmatter{printccs=false}
+\settopmatter{printfolios=false}
+
+
+%% Some recommended packages.
+\usepackage{booktabs}   %% For formal tables:
+                        %% http://ctan.org/pkg/booktabs
+\usepackage{subcaption} %% For complex figures with subfigures/subcaptions
+                        %% http://ctan.org/pkg/subcaption
+\usepackage{cleveref}
+
+\usepackage{listings,lstlangcoq}
+\usepackage{stmaryrd}
+\usepackage{bussproofs}
+
+\usepackage[export]{adjustbox}
+\usepackage[normalem]{ulem}
+\usepackage{balance}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{caption,subcaption}
+\usepackage[inline]{enumitem}
+\usepackage{proof}
+\usepackage{mathpartir}
+\usepackage{xspace}
+% the letterspace argument only applies in \textls environments,
+% which I'm using to space hack.
+\usepackage[letterspace=-65]{microtype}
+\usepackage{leftidx}
+\usepackage{ulem}
+\usepackage{relsize}
+
+\let\Bbbk\relax % Apparently amssymb defines \Bbbk and so does newtxmath, which acmart requires.
+\usepackage{amsmath,amssymb,amsthm}
+
+\input{macros.tex}
+
+\lstdefinestyle{customcoq}{
+  columns=flexible,
+  mathescape=true,
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  xleftmargin=\parindent,
+  language=Coq,
+  morekeywords={Variant, fun, Arguments, Type, cofix, gate, output, control, Circ, lift, box, unbox,WireType, type},
+  %morekeywords={SOCKAPI,ITREE,data_at,data_at_},
+  emph={%
+    SOCKAPI,ITree,data_at,data_at_
+  },
+  emphstyle={\bfseries\color{green!40!red!80}},
+  showstringspaces=false,
+  basicstyle=\small\ttfamily,
+  keywordstyle=\bfseries\color{green!20!black},
+  commentstyle=\itshape\color{red!40!black},
+  identifierstyle=\color{violet!50!black},
+  stringstyle=\color{orange},
+  escapeinside={<@}{@>}
+}
+
+\lstdefinestyle{customocaml}{
+  columns=flexible,
+  mathescape=true,
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  xleftmargin=\parindent,
+  language=caml,
+  %morekeywords={Variant, fun, Arguments, Type, cofix},
+  %morekeywords={SOCKAPI,ITREE,data_at,data_at_},
+  %emph={%
+  %  SOCKAPI,ITree,data_at,data_at_
+  %},
+  emphstyle={\bfseries\color{green!40!red!80}},
+  showstringspaces=false,
+  basicstyle=\small\ttfamily,
+  keywordstyle=\bfseries\color{green!20!black},
+  commentstyle=\itshape\color{red!40!black},
+  identifierstyle=\color{violet!50!black},
+  stringstyle=\color{orange},
+  escapeinside={<@}{@>}
+}
+
+%% SAZ: COMMENT/UNCOMMENT THE FOLLOWING LINES TO TOGGLE COMMENTS
+
+%\newif\ifcomments \commentsfalse
+\newif\ifcomments \commentstrue  %% include author discussion
+\newif\ifpaper \papertrue
+
+\ifcomments
+\newcommand{\sz}[1]{\textcolor{blue}{{[SAZ: #1]}}}
+\newcommand{\ls}[1]{\textcolor{purple}{{[LS: #1]}}}
+\newcommand{\akh}[1]{\textcolor[cmyk]{.66,0,.89,.32}{{[AKH: #1]}}}
+\newcommand{\ph}[1]{\textcolor[cmyk]{0,0.5,1,.2}{{[PH: #1]}}}
+\newcommand{\ec}[1]{\textcolor[RGB]{184, 134, 11}{[EC: #1]}}
+
+\newcommand{\todo}[1]{\textcolor{red}{{[TODO:~#1]}}}
+\newcommand{\cut}[1]{\sout{#1}}
+\else
+\newcommand{\sz}[1]{}
+\newcommand{\ls}[1]{}
+\newcommand{\akh}[1]{}
+\newcommand{\ph}[1]{}
+\newcommand{\ec}[1]{}
+
+\newcommand{\todo}[1]{}
+\newcommand{\cut}[1]{}
+\fi
+
+\usepackage{tikz}
+\usetikzlibrary{quantikz}
+
+\begin{document}
+
+\title{Types and Quantum Programming Languages}
+\begin{abstract}
+Quantum algorithms can provide asymptotic improvement over classical algorithms in key problems like integer factorization.
+However, they require a very different set of abstractions and tools than classical computing.
+Quantum algorithms typically reason explicitly about quantum gates and wires.
+If used or composed incorrectly, these elements will not form circuits that can actually be implemented by any quantum computers.
+The simple act of forking a wire is invalid in the language of quantum circuits.
+This has led to a rich vein of programming languages research to use types to statically ensure properties of quantum programs, as well as allow abstraction, code reuse and code verification.
+This paper introduces three, typed quantum programming languages, the Quantum Lambda Calculus, Qwire, and Quipper.
+To give the reader the proper context to understand these languages, core concepts of quantum computing, like qubits, quantum circuits, and entanglement are explained.
+This paper will also discuss efforts to apply formal methods to each of these languages.
+A researcher with a strong background in programming languages theory and is familiar with undergraduate level linear algebra should come away from this paper understanding these three languages and with enough background to read quantum programming languages papers.
+\end{abstract}
+
+\maketitle
+\ifpaper
+
+\section{Introduction}
+\input{intro.tex}
+
+\section{Background}
+\input{background.tex}
+
+\section{Quantum Lambda Calculus}
+\input{qlcalc.tex}
+
+\section{Qwire}
+\input{qwire.tex}
+
+\section{Discussion}
+\input{compare.tex}
+
+\section{Conclusion}
+\input{conclusion.tex}
+
+\else
+\input{pres.tex}
+\fi
+\end{document}

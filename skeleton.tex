@@ -1,0 +1,152 @@
+\documentclass[acmsmall,screen,review]{acmart}
+
+%% Bibliography style
+\bibliographystyle{ACM-Reference-Format}
+%% Citation style
+%% Note: author/year citations are required for papers published as an
+%% issue of PACMPL.
+\citestyle{acmauthoryear}   %% For author/year citations
+
+\setcopyright{none}
+\settopmatter{printacmref=false}
+\settopmatter{printccs=false}
+\settopmatter{printfolios=false}
+
+
+%% Some recommended packages.
+\usepackage{booktabs}   %% For formal tables:
+                        %% http://ctan.org/pkg/booktabs
+\usepackage{subcaption} %% For complex figures with subfigures/subcaptions
+                        %% http://ctan.org/pkg/subcaption
+\usepackage{cleveref}
+
+\usepackage{listings,lstlangcoq}
+\usepackage{stmaryrd}
+\usepackage{bussproofs}
+
+\usepackage[export]{adjustbox}
+\usepackage[normalem]{ulem}
+\usepackage{balance}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{caption,subcaption}
+\usepackage[inline]{enumitem}
+\usepackage{proof}
+\usepackage{mathpartir}
+\usepackage{xspace}
+% the letterspace argument only applies in \textls environments,
+% which I'm using to space hack.
+\usepackage[letterspace=-65]{microtype}
+\usepackage{leftidx}
+\usepackage{ulem}
+
+\let\Bbbk\relax % Apparently amssymb defines \Bbbk and so does newtxmath, which acmart requires.
+\usepackage{amsmath,amssymb,amsthm}
+
+\input{macros.tex}
+
+\lstdefinestyle{customcoq}{
+  columns=flexible,
+  mathescape=true,
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  xleftmargin=\parindent,
+  language=Coq,
+  morekeywords={Variant, fun, Arguments, Type, cofix},
+  %morekeywords={SOCKAPI,ITREE,data_at,data_at_},
+  emph={%
+    SOCKAPI,ITree,data_at,data_at_
+  },
+  emphstyle={\bfseries\color{green!40!red!80}},
+  showstringspaces=false,
+  basicstyle=\small\ttfamily,
+  keywordstyle=\bfseries\color{green!20!black},
+  commentstyle=\itshape\color{red!40!black},
+  identifierstyle=\color{violet!50!black},
+  stringstyle=\color{orange},
+  escapeinside={<@}{@>}
+}
+
+\lstdefinestyle{customocaml}{
+  columns=flexible,
+  mathescape=true,
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  xleftmargin=\parindent,
+  language=caml,
+  %morekeywords={Variant, fun, Arguments, Type, cofix},
+  %morekeywords={SOCKAPI,ITREE,data_at,data_at_},
+  %emph={%
+  %  SOCKAPI,ITree,data_at,data_at_
+  %},
+  emphstyle={\bfseries\color{green!40!red!80}},
+  showstringspaces=false,
+  basicstyle=\small\ttfamily,
+  keywordstyle=\bfseries\color{green!20!black},
+  commentstyle=\itshape\color{red!40!black},
+  identifierstyle=\color{violet!50!black},
+  stringstyle=\color{orange},
+  escapeinside={<@}{@>}
+}
+
+\usepackage{tikz}
+\usetikzlibrary{quantikz}
+
+\begin{document}
+
+\title{Types and Quantum Programming Languages}
+\begin{abstract}
+Quantum algorithms can provide asymptotic improvement over classical algorithms in key problems like integer factorization. However, they require a very different set of abstractions and tools than classical computing. Quantum algorithms typically reason explicitly about quantum gates and wires. If used or composed incorrectly, these elements will not form circuits that can actually be implemented by any quantum computers. The simple act of forking a wire is invalid in the language of quantum circuits. This has led to a rich vein of programming languages research to use types to statically ensure properties of quantum programs, as well as allow abstraction, code reuse and code verification. This paper introduces three, typed quantum programming languages, the classic Quantum Lambda Calculus, and the modern Qwire and Quipper. To give the reader the proper context to understand these languages, core concepts of quantum computing, like qubits, quantum circuits, and entanglement are explained. This paper will also discuss efforts to apply formal methods to each of these languages. A researcher with a strong background in programming languages theory and is familiar with undergraduate level linear algebra should come away from this paper understanding these three languages and with enough background to read quantum programming languages papers.
+\end{abstract}
+
+\maketitle
+\section{Introduction}
+
+\section{Contributions}
+\begin{itemize}
+\item An extended background section, designed to introduce quantum programming to a computer scientist with no background in quantum mechanics.
+\item A presentation of three quantum programming languages: the Quantum Lambda Calculus, Qwire, and Quipper. For the Quantum Lambda Calculus and Qwire, we present the formal semantics along with the type safety theorems. For Quipper, we will discuss its implementation as  a DSL in Haskell, along with its mathematically rigorous core calculus, Proto-Quipper-M.
+\end{itemize}
+\section{Background}
+\subsection{Qubits and Quantum State Systems}
+\subsection{Quantum Circuits}
+\subsection{QRAM Model}
+\subsection{Running Example: Functional Entanglement}
+Consider a fixed positive number $n$, along with a fixed quantum oracle $Q_f$ where $f : 2 ^ n \rightarrow 2 ^ n$. We can construct the below $2n$ qubit quantum circuit whose inputs are fixed to be the classical state \ket{0} scaled up to $n$ qubits.
+
+\begin{quantikz}
+\lstick{\ket{0}$^{\otimes n}$} & \gate{H_n} &  \qw & \qw \slice{$(\frac{1}{\sqrt{2^n}}\sum_x\ket{x})\otimes\ket{0^n}$} & \qw & \qw & \qw &  
+\gate[wires=2]{Q_f}           & \qw \slice{$\frac{1}{\sqrt{2^n}}\sum_x\ket{x}\otimes\ket{f(x)}$} & \qw & \qw  \\
+\lstick{\ket{0}$^{\otimes n}$} & \qw                                                              &  \qw & \qw &  \qw & \qw & \qw &  
+\qw                                                                               & \qw & \qw & \qw 
+\end{quantikz}
+
+The circuit diagram marks the intermediate state $(\frac{1}{\sqrt{2^n}}\sum_x\ket{x})\otimes\ket{0^n}$. The state at this point in the circuit is the tensor product of the state of the upper wire, which is an equal superposition of all classical states, and the state of the lower wire, which is just the classical state of all 0’s. We derive this from the behavior from the top row of the extended hadamard gate $H_n$. The following reasoning shows how this intermediate state transforms into the final state in the diagram.
+
+\begin{align}
+Q_f ((\frac{1}{\sqrt{2^n}}\sum_x\ket{x})\otimes\ket{0^n}) &=\\
+Q_f(\frac{1}{\sqrt{2^n}}\sum_x(\ket{x}\otimes\ket{0^n})) &=\\
+\frac{1}{\sqrt{2^n}}\sum_xQ_f(\ket{x})\otimes\ket{0^n}) &=\\
+\frac{1}{\sqrt{2^n}}\sum_x (\ket{x} \otimes\ket{f(x)})
+\end{align}
+
+The first two lines are equal because the tensor product is linear in both of its arguments. The next two lines are equal because $Q_f$ is also a linear transformation. And the final two lines are equal by the definition of a quantum oracle.
+
+The final state, $\frac{1}{\sqrt{2^n}}\sum_x (\ket{x} \otimes\ket{f(x)})$, has the property that that the $x \times y$th coordinate is $\frac{1}{\sqrt{2^n}}$ if $y = f(x)$ and $0$ otherwise. Preparing this state is part of several quantum algorithms, including Shor’s factorization algorithm. Intuitively, this state is useful because it turns this sequence of qubits into a search space of every input-output pair in $f$. Even though this system only requires $2n$ qubits to represent, it still encodes all $2^{2n}$ possible input-output pairs. From this state, we can solve problems by carefully designing quantum circuits to have “good” input-output pairs reinforce each other and “bad” input-output pairs interfere with each other, leading to a final state with a high probability of measuring a “good” input-output pair. This paper will use this circuit as a running example, to see how the different languages each encode this 
+
+\section{Quantum Lambda Calculus}
+\subsection{Syntax and Type System}
+\subsection{Running Example Implementation}
+\subsection{Operational Semantics And Quantum Closures}
+
+\section{Qwire}
+\subsection{Syntax and Type System}
+\subsection{Running Example Implementation}
+\subsection{Operational and Denotational Semantics}
+\subsection{Formal Verification with Qwire}
+\section{Quipper}
+\subsection{Haskell Implementation}
+\subsection{Runnning Example Implementation}
+\subsection{Summary of Experimental Analysis}
+\subsection{Proto-Quipper-M}
+\end{document}

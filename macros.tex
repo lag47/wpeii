@@ -1,0 +1,31 @@
+\newcommand{\icol}[1]{% inline column vector
+  \left(\begin{smallmatrix}#1\end{smallmatrix}\right)%
+}
+
+\newcommand{\irow}[1]{% inline row vector
+  \begin{smallmatrix}(#1)\end{smallmatrix}%
+}
+
+\newcommand{\hil}[1]{
+  $\mathbb{C}^{#1}$
+}
+
+%replace with some better monofont thing
+\newcommand{\run}{run}
+
+\newcommand{\inlinecoq}[1]{\mbox{\lstinline[style=customcoq,basicstyle=\small\ttfamily,columns=fixed,basewidth=.48em]{#1}}}
+\newcommand{\qubit}{\inlinecoq{qubit}}
+\newcommand{\bit}{\inlinecoq{bit}}
+\newcommand{\bool}{\inlinecoq{bool}}
+\newcommand{\qwcirc}[2]{\inlinecoq{Circ}(#1,#2)}
+\newcommand{\rulefiguresize}{\small}
+\newcommand{\emptyc}{\cdot}
+\newcommand{\unitv}{()}
+\newcommand{\coqfont}[1]{\texttt{#1}\xspace}
+\newcommand{\unitt}{\coqfont{Unit}}
+\newcommand{\hoststep}{\rightarrow_{H}}
+\newcommand{\boxstep}{\rightarrow_{b}}
+\newcommand{\thmbegin}{\begin{itemize} \end{itemize}}
+
+\newcommand{\dense}{\ensuremath{\rho}}
+\newcommand{\liquid}{LIQUi$\ket{}$}

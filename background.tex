@@ -1,0 +1,288 @@
+\subsection{Qubits and Quantum State Systems}
+The most basic unit of data in quantum computing is called the qubit.
+As the name suggests, a qubit is a quantum computing generalization of the classical bit.
+A bit is some object, typically a wire, that can be in one of two states labelled 0 and 1.
+A qubit is some object that can be in any of the states, 0, 1, or a linear combination of 0 and 1 with possibly complex valued weights.
+In other words, a bit is an element of some finite type of size two, while a qubit is an element of the type of complex valued vectors of size two.
+Qubits are actually even more constrained.
+The norm of the the vector must also be one.
+To show some concrete examples, we must first introduce a little bit of notation.
+In this paper, we will use the bra-ket notation, a way of denoting vectors that came out of the quantum mechanics literature and is standard in this field. 
+
+\paragraph{Single Qubit Systems}
+$\ket{0}$ is the vector $\icol{1\\0}$, the vector with a 1 in the 0th element, and 0’s everywhere else.
+$\ket{1}$ is the vector $\icol{0 \\ 1}$, the vector with a 1 in the 1st element, and 0’s everywhere else.
+Note that $\ket{0}$ and $\ket{1}$ form a basis for the vector space \hil{2}.
+Given a Greek letter, for example $\phi$, $\ket{\phi}$ refers to an arbitrary state of a qubit.
+So any element of that space can be written as $\alpha\ket{0} + \beta\ket{1}$ for some $\alpha$ and $\beta$ where $\alpha^2 + \beta^2 = 1$.
+The complex numbers $\alpha$ and $\beta$ are called the amplitudes of the states 0 and 1.
+We call any state with nonzero $\alpha$ and $\beta$ a superposition of the classical states 0 and 1.
+One example is the vector $\icol{1/\sqrt{2}\\ 1/\sqrt{2}}$, which represents an equal superposition of the states 0 and 1. 
+
+\paragraph{Quantum Measurement}
+Unlike with classical bits, we cannot directly observe what precise state a qubit is in.
+There is no operation we can perform on a qubit that will tell us the amplitudes of that state.
+The only operation we can perform that gives us some information about the state is quantum measurement.
+If you measure a qubit in the state $\ket{\phi} = \alpha\ket{0} + \beta\ket{1}$, then you will observe either the classical state 0 with probability $\alpha^2$ or the classical state 1 with probability $\beta^2$. Note that is a valid probability space precisely because the norm of $\ket{\phi}$ is required to be 1.
+This measurement operation affects the state as well.
+After measurement, the state becomes the classical state that was just measured.
+So if you measure a state twice in immediate succession, then you will observe the same state each time.
+For example, if you measure the state $\ket{0}$, you will observe 0 and the state of the qubit will remain $\ket{0}$.
+But if you measure $\ket{\phi} = \icol{1/\sqrt{2} \\ 1/\sqrt{2}}$, then there is a 1/2 chance that you will observe 0 and the state will change to be $\ket{0}$, and there is a 1/2 chance that you will observe 1 and the state will change to be $\ket{1}$.
+
+Note that qubits carry more information than is encoded in the measured distribution.
+The states $\ket{0}$, $-\ket{0}$ and $i\ket{0}$ will all be measured to be in state 0 with probability 1, but they are distinct states.
+And this distinction is essential in quantum algorithms.
+
+We can extend this notion of quantum states from a single qubit to a system of n qubits.
+The state of an n qubit system is represented by a vector in \hil{2^n} whose norm is 1.
+Just as in the single qubit system, if x is a sequence of n bits, and therefore a classical state in an n bit system, then $\ket{x}$ is the quantum state where the xth index is a 1 and all other indices are 0. Once again, the classical states form a basis for the quantum states.
+
+It is important to be able to distinguish between the mathematical denotation of an n qubit system and the physical implementation of it.
+From a mathematical standpoint, an $n$ qubit state is a unit vector in \hil{2^n}.
+From a physical standpoint, it is $n$ specially prepared objects that each could be measured to be in one of two states.
+Here, we can begin to see where some of the power of quantum computing comes from.
+Viewed classically, such a system has only $2^n$ states.
+Viewed through quantum mechanics, it can encode exponentially more states.
+However, our inability to directly read quantum states the way that we can read classical states is still a major limitation.
+Once again, we can only measure the state of an $n$ qubit system and observe a single classical state of the system with a probability equal to the squared norm of the amplitude of that state. The state can also be partially measured, measuring the state of some qubits but leaving others unobserved.
+Modeling this is important for giving complete semantics to quantum programs, but no examples in this paper will require knowledge in that depth. \ls{Should I explain the math of such observations or leave that out?}
+\ls{I feel like this is too much straightline text, more of the math should be factored into easily readable and eyecatching lines}
+
+\ls{bring up further}
+\paragraph{Tensor Product}
+The tensor product is a matrix operation that is not universally covered in linear algebra courses, but is used extensively in quantum programming, so we briefly introduce it here.
+\begin{definition}
+Suppose $A$ is an $m \times n$ matrix, and $B$ is a $p\times q$ matrix, then $A\otimes B$ is the $mp \times nq$ matrix defined by the below block matrix.
+\begin{align*}
+    \begin{bmatrix}
+        a_{11} & a_{12} & \cdots &a_{1n}\\
+        a_{21} & a_{22} & \cdots &a_{2n}\\
+        \vdots & \vdots & \ddots & \vdots \\
+        a_{m1} & a_{m2} & \cdots & a_{mn}
+    \end{bmatrix} 
+    \otimes B = 
+    \begin{bmatrix}
+        a_{11}B & a_{12}B & \cdots &a_{1n}B\\
+        a_{21}B & a_{22}B & \cdots &a_{2n}B\\
+        \vdots & \vdots & \ddots & \vdots \\
+        a_{m1}B & a_{m2}B & \cdots & a_{mn}B
+    \end{bmatrix}
+\end{align*}
+\end{definition}
+Intuitively, we scale $B$ separately by each index of $A$ and then flatten this matrix of matrices into a single matrix of larger dimension.
+For example we take the tensor product of $\frac{\ket{0} + \ket{1}}{\sqrt{2}}$ and $\ket{0}$ below.
+\begin{align*}
+    \begin{bmatrix} 1 / \sqrt{2} \\ 1 / \sqrt{2} \end{bmatrix} \otimes \begin{bmatrix} 1 \\ 0 \end{bmatrix}   = 
+\begin{bmatrix} 1 / \sqrt{2} \\ 0 \\ 1 / \sqrt{2}  \\ 0 \end{bmatrix}
+\end{align*}
+\subsection{Quantum Entanglement}
+In multiple qubit systems, the complicated phenomenon of quantum entanglement arises.
+For a concrete example, let us consider a 2 qubit system, whose state can be modeled by unit vectors in \hil{4}.
+This system has the classical states $\ket{00}, \ket{01}, \ket{10}, and \ket{11}$ along with the equal superposition state.
+It also has states like $\ket{\phi} = \frac{1}{\sqrt{2}}\ket{00} + \frac{1}{\sqrt{2}}\ket{11}$.
+This state is unique in two important ways.
+First, look at the distribution we get out if we measure $\ket{\phi}$.
+With 1/2 chance, both of the qubits are observed to be 0, and with 1/2 chance, both of the qubits are observed to be 1.
+These qubits are constrained to be observed to have the same value. 
+$\ket{\phi}$ is also unique because it cannot be decomposed into the tensor product of two states from a 1 qubit system. 
+(Maybe just focus on the first part)
+\ls{focus on what entanglement allows us to do and how it makes all operations "global" in a sense and unfold H ket 0 sometimes}
+	
+Entanglement allows us, in certain cases, to take a set of useful classical states and increase the probability of measuring them at the cost of probability of measuring useless classical states. \ls{I am not sure I have covered this topic enough, I am also not sure how much to foreground it}
+\subsection{Quantum Gates And Circuits}
+Now that we have a basic understanding of what a qubit is, we can talk more about the operations that we can perform on them.
+We have already discussed measurement, but measuring a state is only useful if we have carefully prepared it to have some useful properties already.
+How can we go from a normal classical state to some sort of usefully entangled one?
+And how do we know what information these measurements can actually tell us?
+
+Asides from measurement, we directly manipulate quantum state systems by running them through quantum circuits.
+Quantum circuits are a straightforward analogue to standard boolean circuits.
+Quantum circuits are composed of quantum gates connected by a series of wires.
+Think of these wires as carrying qubits from the output of one gate to the input of another.
+Just like boolean circuit gates, these gates implement some function on their inputs and output the results. 
+
+However, all quantum gates, and therefore quantum circuits as well, implement reversible, linear functions.
+In fact the full restriction is that an n qubit quantum circuit is denoted by unitary matrix from \hil{2^n \times 2^n}. 
+ square matrix is unitary if its inverse is its complex conjugate.
+Three important facts are implied by this constraint.
+First, unitary matrices preserve the norm of vectors they are applied to.
+This means that quantum circuits never take a qubit to some non unit norm vector.
+Second, unitary matrices have inverses, so any quantum circuit is reversible. And third, matrices are all linear functions.
+Since the classical states form a basis for any quantum state system, this means that the behavior of quantum circuits is fully determined by its behavior on classical states.
+
+One important 1 qubit gate is the hadamard gate, H.
+It is denoted by the matrix $\frac{1}{\sqrt{2}}\icol{1 & 1 \\ 1 & -1}$. If you consider applying the hadamard gate to $\ket{0}$ and $\ket{1}$, you will see that $H\ket{0} = \icol{1/\sqrt{2} \\ 1/\sqrt{2}}$ and $H \ket{1} = \icol{1/\sqrt{2} \\ 1/\sqrt{2}}$.
+This shows that the hadamard gate takes classical states to states in equal superposition.
+
+Another important gate is the CNOT, or controlled-not, gate.
+It is a 2 qubit gate.
+One input is the control qubit and the other is the target qubit.
+Focusing on its affect on classical states, CNOT checks the control qubit, if it is $\ket{0}$ it leaves the target qubit alone, and if it is $\ket{1}$ then it flips the target qubit.
+Knowing this, we can write the $4 \times 4$ matrix that it implements.
+\[
+\begin{pmatrix}
+1 & 0 & 0 & 0\\
+0 & 1 & 0 & 0\\
+0 & 0 & 0 & 1\\
+0 & 0 & 1 & 0
+\end{pmatrix}
+\]
+
+This is a simple permutation matrix that flips the 3rd and 4th index of a vector.
+In circuit diagrams, we represent applying CNOT to two wires with the following diagram fragment. \\
+\begin{quantikz}
+\qw & \ctrl{1} & \qw\\
+\qw & \targ{}  & \qw
+\end{quantikz}
+
+The wire with the filled in circle is the control qubit, and the wire with the open circle wire a target is the target qubit.\ls{that is worded a bit confusingly}
+
+With the hadamard and CNOT gates, we can create an entangled state.
+But in order to do that, we need to understand how to combine quantum state systems.
+Given two quantum state systems, we can combine them using the tensor product.\ls{Should I introduce the tensor product or is that assumed }
+So combining an n qubit system, represented by unit vectors in \hil{2^n}, with an m qubit system, represented by unit vectors in \hil{2^m}, we get an $n + m$ qubit system, represent by unit vectors in \hil{2 ^ {n + m}}.
+If the n qubit system is in state $\ket{\phi_n}$ and the m qubit system is in state $\ket{\phi_m}$, then the combined system is in state $\ket{\phi_n \otimes \phi_m}$.
+However, while we can also combine state systems with the tensor product, we cannot always decompose the combined system back into the components.
+These states that cannot be decomposed are the entangled states. \ls{this paragraph is awkward}. Consider the below circuit.
+
+\input{circs/entanglement.tex}
+
+We begin with two qubits, both in the $\ket{0}$ state.
+Then we use a hadamard gate to change the state of the top qubit into into the equal superposition $\icol{1/\sqrt{2} \\ 1/\sqrt{2}}$.
+By taking the tensor product, we can see the total state at this point $q_1$ is $\icol{1/\sqrt{2} \\ 0 \\ 1/\sqrt{2} \\ 0}$.
+We can also write this state as $\frac{1}{\sqrt{2}}\ket{00} + \frac{1}{\sqrt{2}}\ket{10}$, an equal superposition between the 00 and 10 states.
+Then, $q_1$ is subjected to the CNOT gate, which swaps the 3rd and 4th indices creating the state $q_2 = \icol{1/\sqrt{2} \\ 0 \\ 0 \\ 1/\sqrt{2}}$.
+This state is one of the entangled states that we previously discussed and can be written as  $\frac{1}{\sqrt{2}}\ket{00} + \frac{1}{\sqrt{2}}\ket{11}$.
+
+Circuits that create useful entangled states often start out with quantum states that put all classical states in equal superposition.
+We can accomplish this with a series of hadamard gates.
+Given an $n$ qubit system, applying a single hadamard gate to each wire will have the effect of taking the state $\ket{0^n}$ to an equal superposition of all classical states.
+This circuit is called $H_n$.
+
+\subsection{Quantum Oracles}
+
+Suppose we have a boolean valued function $f$ from $2^n$ to $2^m$ for some $n \geq m$.
+We know that we can create a classical circuit that computes this function.
+However, all quantum circuits are invertible, and $f$ might not be an invertible function.
+However, we can (often? need to get clarification on this) embed $f$ in a quantum circuit as what is called a quantum oracle.
+A quantum oracle for a function $f: 2^n \rightarrow 2^m$ is an $n + m$ qubit circuit whose behavior on classical states is the below two equations.
+
+The second equation is a straightforward corollary of the first, but it is important to point it out because it gets to the heart of the purpose of quantum oracles.
+You can think of the bottom wire as a kind of m qubit workspace.
+If you have some classical state that you want to apply $f$ to, you can feed it into the top $n$ qubits, and feed 0 into the bottom m qubits and then have that unchanged state along the top wire and the actual function output will be written onto the workspace.
+
+For a concrete example, we can show the whole circuit for a quantum oracle for the exclusive-or function.
+$\oplus$ is a function from $2^2$ to $2^1$, and its quantum oracle is the below $3$ qubit circuit.
+
+\input{circs/xor_oracle.tex}
+
+To understand this circuit, we can analyze how it transforms classical states.
+The first thing to notice about this circuit is that the upper two wires, $x$ and $y$, remain unchanged.
+The second thing to notice is that the third wire, initially carrying $z$, gets flipped up to two times, one for each of $x$ and $y$ that is in a 1 state.
+As noted in the diagram, this is equal to $(x \oplus y) \oplus z$.
+This means that the circuit satisfies the equations of the quantum oracle for exclusive-or.
+\subsection{QRAM Model of Quantum Computing}
+
+We now have discussed quantum state systems and how to transform them using quantum circuits.
+However, these tools do not tell we can effectively use these tools.
+The primary point of quantum programs is to take problems that come up in classical settings, like integer factorization for example, and use quantum circuits to perform key parts of an algorithm to solve the problem.\ls{This is a subtle and complicated idea I am not currently getting across well}.
+This can even happen in a loop, with a classical computer repeatedly designing a circuit, sending it to a quantum computer computer to be run, and then recording some information and designing new circuits based on that.
+The QRAM model is an abstraction for quantum computing that maintains a distinction between a quantum computer, which can realize a specification for a quantum circuit and then execute it, and a classical computer, which can perform all of the normal functions of a computer, including writing specifications for quantum circuits.\ls{That programs can write other programs should be a familiar idea for PL people}
+Each language discussed in this paper realizes this model of computation in some way.
+
+\subsection{Running Example: Functional Entanglement}
+Consider a fixed positive number $n$, along with a fixed quantum oracle $Q_f$ where $f : 2 ^ n \rightarrow 2 ^ n$. We can construct the below $2n$ qubit quantum circuit whose inputs are fixed to be the classical state \ket{0} scaled up to $n$ qubits.
+
+\input{circs/function_entang.tex}
+
+The circuit diagram marks the intermediate state $(\frac{1}{\sqrt{2^n}}\sum_x\ket{x})\otimes\ket{0^n}$.
+The state at this point in the circuit is the tensor product of the state of the upper wire, which is an equal superposition of all classical states, and the state of the lower wire, which is just the classical state of all 0’s.
+We derive this from the behavior from the top row of the extended hadamard gate $H_n$.
+The following reasoning shows how this intermediate state transforms into the final state in the diagram.
+
+\begin{align}
+Q_f ((\frac{1}{\sqrt{2^n}}\sum_x\ket{x})\otimes\ket{0^n}) &=\\
+Q_f(\frac{1}{\sqrt{2^n}}\sum_x(\ket{x}\otimes\ket{0^n})) &=\\
+\frac{1}{\sqrt{2^n}}\sum_xQ_f(\ket{x})\otimes\ket{0^n}) &=\\
+\frac{1}{\sqrt{2^n}}\sum_x (\ket{x} \otimes\ket{f(x)})
+\end{align}
+
+The first two lines are equal because the tensor product is linear in both of its arguments.
+The next two lines are equal because $Q_f$ is also a linear transformation.
+And the final two lines are equal by the definition of a quantum oracle.
+
+The final state, $\frac{1}{\sqrt{2^n}}\sum_x (\ket{x} \otimes\ket{f(x)})$, has the property that that the $x \times y$th coordinate is $\frac{1}{\sqrt{2^n}}$ if $y = f(x)$ and $0$ otherwise.
+Preparing this state is part of several quantum algorithms, including Shor’s factorization algorithm.
+Intuitively, this state is useful because it turns this sequence of qubits into a search space of every input-output pair in $f$.
+Even though this system only requires $2n$ qubits to represent, it still encodes all $2^{2n}$ possible input-output pairs.
+From this state, we can solve problems by carefully designing quantum circuits to have “good” input-output pairs reinforce each other and “bad” input-output pairs interfere with each other, leading to a final state with a high probability of measuring a “good” input-output pair.
+This paper will use this circuit as a running example, to see how the different languages each encode this. 
+
+\subsection{Quantum No Cloning Theorem}
+One tricky property about quantum computing is the quantum no cloning theorem.
+Intuitively, it says that there is no quantum circuit that can take a quantum state $\ket{\phi}$ and output it twice along two separate wires.
+This continues to hold if you introduce some other fixed input
+We can state it formally as well.
+\begin{theorem}[Quantum No Cloning]
+Given any positive $n$, there is no unitary matrix $U:\mathbb{C}^{2^{2n}\times 2^{2n}}$ such that given any quantum state $\ket{\phi}$,
+$U(\ket{\phi}\otimes\ket{0^n}) = \ket{\phi} \otimes \ket{\phi}$.
+\end{theorem}
+The proof of this theorem is surprisingly simple.
+Any $U$ that could clone a state would not be linear.
+Suppose such a $U$ existed, then we could derive a contradiction with the following valid equations.
+\begin{align*}
+U(\ket{\phi}\otimes\ket{0^n}) &=\\
+2U(\frac{1}{2}\ket{\phi} \otimes \ket{0^n}) &=\\
+2(\frac{1}{2}\ket{\phi} \otimes \frac{1}{2}\ket{\phi}) &=\\
+\frac{1}{2} \ket{\phi} \otimes \ket{\phi} &\neq \ket{\phi} \otimes \ket{\phi}
+\end{align*}
+\subsection{Static and Dynamic Lifting}
+
+\subsection{Density Matrix Representation}%maybe this belongs in section
+One reason that quantum computing is difficult is that it mixes classical probability with quantum state systems.
+As soon as you measure a wire, you need to jump from the scary world of qubits to the downright terrifying world of distributions over qubits.
+Density matrices provide us with a compact representation of distributions over quantum states that cleanly interacts with linear transformations over quantum states.
+\todo{remember this is from tseng and chuang while the rest is from the other textbook}
+\begin{definition}[Density Matrix]
+A square matrix $\dense : \mathbb{C}^{2^n\times 2^n}$ is a density matrix over $\mathbb{C}^{2^n}$ if there is some set of pairs $(p_i,\phi_i)$ where $\phi_i: \mathbb{C}^{2^n}$, $p_i\geq 0$ and $\sum_{i}p_i=1$ such that
+$M=\sum_{i}p_i\ket{\phi}\ket{\phi}^*$. Given a quantum state space $H$, $H^*$ is used to denote the space of density matrices over $H$.
+\end{definition}
+Consider a single qubit system. Three example density matrices are
+\begin{align}
+[\begin{smallmatrix} 1 & 0 \\ 0 & 0 \end{smallmatrix}]&= \ket{0}\ket{0}^\dagger\\
+ [\begin{smallmatrix} 0 & 0 \\ 0 & 1 \end{smallmatrix}]&= \ket{1}\ket{1}^\dagger\\
+ [\begin{smallmatrix} 3/4 & 0 \\ 0 & 1/4 \end{smallmatrix}]&= \frac{3}{4}\ket{0}\ket{0}^\dagger + \frac{1}{4}\ket{1}\ket{1}^*
+\end{align}
+
+To measure the probability of measuring a state $\ket{\phi}$ given a density matrix $\dense$, you compute $\ket{\phi}^*M\ket{\phi}$.
+So, for example, the probability of $\ket{0}$ in $[\begin{smallmatrix} 3/4 & 0 \\ 0 & 1/4 \end{smallmatrix}]$ is $\frac{3}{4}$.
+If $\dense$ is defined with a set of orthogonal vectors $\phi_i$, then the probability of $\phi_i$ must be the corresponding $p_i$.
+Note that even if a state $\ket{\phi}$ is not one of the states that $M$ is defined it, it can still have nonzero probability.
+For example, the given the matrix $M = \frac{3}{4}\ket{0}\ket{0}^* + \frac{1}{4}\ket{1}\ket{1}^*$, the probability of measuring $\icol{1 / \sqrt{2} \\ 1 / \sqrt{2}}$ is $\frac{1}{2}$.
+For the purposes of this paper, we are primarily interested in measuring with respect to classical states, but it is worth noting that measuring with respect to superpositions is a sensible thing to do.
+
+Given a density matrix $\dense$, and an operator between quantum state spaces $U$, we can compute the transformed density matrix as $U^*(M)=UMU^\dagger$.
+This transforms $U$, which is a linear transformation over quantum state spaces, into a superoperator, a linear transformation over density matrices.
+So in order to denote circuits as transformations over density matrices, we can reuse all that we have already learned about quantum circuits as unitary matrices.
+
+
+Moreover, superoperators over density matrices allow us to give matrix representations to the non-reversible operations essential to quantum computations, and even transformations between different quantum state spaces.
+This is very useful when reasoning about operations like measurement and preparation of new states.
+We saw above how to lift a pure quantum to the corresponding density matrix.
+We can also give a superoperator for the measurement of a 1 qubit system with respect to the classical states $\ket{0}$ and $\ket{1}$ as
+\begin{align*}
+    (\ket{0}\ket{0}^\dagger )^* + (\ket{1}\ket{1}^\dagger )^*
+\end{align*}
+When reading this definition be careful to note that the $+$ here is elementwise addition over functions, not matrix addition.
+In particular, $f^* + g^* \neq (f+g)^*$.
+As such, the measurement superoperator defined above is not equal to the identity matrix, even though the sum of the two matrices is the identity matrix.
+If you do the arithmetic, you will find that applying the measurement superoperatory to the pure state $\icol{1/\sqrt{2} \\ 1/\sqrt{2}}\icol{1/\sqrt{2} \\ 1/\sqrt{2}}^\dagger$ yields the mixed state $\frac{1}{2}\ket{0}\ket{0}^\dagger + \frac{1}{2}\ket{1}\ket{1}^\dagger$.
+In other words measuring the equal superposition of $\ket{0}$ and $\ket{1}$ has even odds of yielding the state $\ket{0}$ and the state $\ket{1}$, as we have previously discussed.
+
+We still need to define a method of taking the tensor product over superoperators.
+We will define this tensor product over a decomposition of superoperators.
+\begin{lemma}
+    Given any superoperator $f$, there exists a set $X$ of matrices such that $f(\rho)=\sum_{M\in X}M^*\rho$.
+\end{lemma}
+From here, we can define $(f \otimes g) (\rho) := \sum_{(M_x, M_y) \in X \times Y}(M_x \otimes M_y)^*\rho$ where $X$ is the decomposition of $f$ and $Y$ is the decomposition of $g$.

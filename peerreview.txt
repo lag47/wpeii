@@ -1,0 +1,23 @@
+- Beginning section 1, this opening could be much stronger if you had more parallelism. Something like
+    "In math, you state a proposition, you write a proof, and then anyone can verify that your proof is correct"
+- Beginning section 1, I think you brush over the concept of a mathematical statement a little too quickly
+    I imagine that a given proof system can only work for a certain language of mathematical predicates
+    and this is a subtle concept that I think would be confusing to anyone unfamiliar with formal logic.
+- Bottom page 1, I understand that graph colorings are supposed to be known by the reader, 
+    but I feel that bringing up a concrete example and then not really explaining 
+    what the problem is or why is you pick it is not a good idea
+- Beginning section 2, Field theory (or abstract algebra in general) is not one of the things you say a 
+    reader should come in knowing. Therefore I think you should specialize to a specific field in the 
+    problem statement (rational numbers could be a good choice), you can then add to the end that 
+    the algorithm is more powerful and can be applied to domains relevant to cryptography
+    Alternatively, maybe specialize to the field of integers mod some prime.
+    Alternatively, maybe give me some more intuition on why this is an important problem.
+    In the abstract you say that zero knowledge proofs are important in cryptography,
+    how do they allow me to either securely send or verify authenticity of some information?
+    I also don't know what the super-polynomial algorithm is.
+- Beginning 2, you mention the term protocol several times.
+    Is there an important difference between a protocol and an algorithm?
+    If so, does the reader need to know it? 
+    Then you should probably dedicate more space to introducing it.
+- Section 2, in general I think you need to go a lot slower.
+    Introduce topics and give intuition before going straight for the mathematical definitions

@@ -1,0 +1,335 @@
+The Qwire language is parameterized by a host language.
+In this sense, Qwire really describes a family of languages and not a single one.
+However, with only a few assumptions about the host language, namely that it has booleans, product types, and is strongly normalizing \ls{big assumption can’t brush past this easily}, we can give a formal semantics to Qwire.
+
+\subsection{Introduction to Qwire}
+
+Qwire breaks up reasoning about quantum programs into three levels.
+At the top, we have the host language capable of everything that a strongly normalizing functional programming language can do.
+We require that this host level have boolean and pair types, and we extend the host language with a new type of circuits.
+Then we have the circuit layer, which is isolated into a special modality.
+It is only in that modality that we can directly manipulate the final level, wires.
+Much like in our original introduction of quantum programming, circuits are made up of quantum gates and wires.
+Unlike in the quantum lambda calculus, wires and qubits are not standard terms that can be manipulated anywhere in the language.
+We cannot create functions from qubits to qubits in Qwire.
+
+However, a circuit can be parameterized on initial input wires, acting like a function over qubits. 
+With these tools, we can easily define a a circuit that creates the entanglement of the states $\ket{00}$ and $\ket{11}$.
+
+
+\todo{make up some kind of syntax highlighting? }
+\todo{put these next to each other}
+
+\begin{lstlisting}[style=customcoq]
+x <- gate new0 ();
+y <- gate new0 ();
+x <- gate hadamard x;
+o <- gate control not (x,y);
+output o
+\end{lstlisting}
+
+\input{circs/entanglement.tex}\\
+\ls{maybe I need a version of this circuit with different annotations}\\
+Inside this circuit, the gate keyword is used to both to create new qubits and apply gates.
+On the first two lines, we introduce new qubits initialized to the $\ket{0}$ state with the \inlinecoq{new0} gate.
+Then we apply the \inlinecoq{hadamard} gate to the \inlinecoq{x} qubit.
+Note that we reuse the variable name \inlinecoq{x} with variable shadowing.
+Because Qwire's linear type system prevents us from using a wire value twice, this is fine\ls{very weaselly worded}.
+Qwire is parameterized on a collection of base gates. 
+Each gate needs to be given a gate type, which specifies the input and output wires of the gate. 
+The notion of gate here is broader than the notion of gate in the background section. 
+In that section, gates only referred to reversible computations that perform no measurement and preserve superposition information. 
+In Qwire these are called unitary gates, while standard gates include measurment and the initial prepration of classical states. 
+Unitary gates can be inverted or controlled, producing new unitary gates.\ls{previous sentence not great}
+\inlinecoq{not} is a unitary gate, so we can construct a controlled version \inlinecoq{not} gate that behaves the same as the CNOT gate in the background section.
+
+\subsection{Circuit Host Language Interactions}
+
+There are two ways to take a circuit like that and embed it into the top level host language.
+The first way is to specify its inputs with and delimit it with the box keyword.
+The boxed circuit then becomes a term with a circuit type in the host language.
+The boxed circuit can then be unboxed and used in a circuit.
+The second way is to take a circuit with no undefined inputs and running it with the \run keyword.
+Intuitively, running a circuit first yields some quantum state, which is then implicitly measured.
+For example, consider running the code from above.
+\begin{lstlisting}[style=customcoq]
+run
+    x <- gate new0 ();
+    y <- gate new0 ();
+    x <- gate hadamard x;
+    o <- gate control not (x,y);
+    output o
+\end{lstlisting}
+This program would produce the state $\frac{1}{\sqrt{2}}(\ket{00} + \ket{11})$, and then measure both wires.
+This has an equal likelihood of producing the pair \inlinecoq{(true,true)} and the pair \inlinecoq{(false,false)}.
+Note that this means that you cannot preserve any part of the quantum system when finished running a circuit.
+
+Only having static lifting is too restrictive for some quantum algorithms\todo{at least have a citation, ideally a bit more of an explanation}.
+Sometimes, algorithms require certain wires to be measured while the rest of the state is preserved, and then determine what transformations to make to the remaining state from state based on the measured values.
+Qwire enables this with the \inlinecoq{lift} keyword.
+
+Consider the following example program with input wires \inlinecoq{x} and \inlinecoq{y}.
+\begin{lstlisting}[style=customcoq]
+    b <- lift x;
+    y <- unbox (if b then c1 else c2) y;
+    output y
+\end{lstlisting}
+This circuit observes the state in \inlinecoq{x} and uses that value to decide which circuit to apply to \inlinecoq{y}.
+This operation is very different from previous ones that we have seen in Qwire.
+At first, this might appear similar to the \inlinecoq{control} gate.
+However, \inlinecoq{control} only works on unitary gates, where the above program can work with arbitrary circuits.
+The extra power comes from the fact that the \inlinecoq{lift} keyword creates a host language boolean value, not a circuit level wire.
+This gives us access to all of the tools of a full programming language to turn this measured value into a circuit.
+
+
+\begin{figure}
+    \todo{find better way to format this}
+\begin{align*}
+W ::=  \qubit \quad|\quad \bit \quad|\quad W_1 \otimes W_2    \\
+\tau ::= ... \quad | \quad \bool \quad | \quad \tau_1 \times \tau_2 \quad | \quad \qwcirc{W_1}{W_2}
+\end{align*}
+\end{figure}
+
+\subsection{Qwire Type System}
+Qwire uses a mixture of linear and non-linear types in order to prevent violations of quantum circuit rules with minimal extra burden placed on programmers.
+Linear types are used to prevent reuse of wire values inside of circuits.
+Non-linear types are used everywhere else in the host language\ls{bad parallelism}.
+To maintain this distinction, Qwire has three different typing derivations.
+The lowest level derivation is the wire typing derivation, which has the below shape.
+\begin{align*}
+\Omega \Rightarrow p : W
+\end{align*}
+$\Omega$ refers to a context of wire variables.
+Intuitively, $p$ is some arrangement of the wire variables in $\Omega$ with type $W$.
+You can also read this derivation as saying that $\Omega$ is a collection of wires that have been permuted into value $p$ with type $W$.
+All of the inference rules for this derivation are given in Figure~\ref{fig:wire_type_der}.
+These typing rules preserve the invariant that every variable bound in $\Omega$ is used in $p$ exactly once.
+
+At the next level is the circuit typing derivation which has the below shape.
+\begin{align*}
+\Gamma;\Omega \vdash C : W
+\end{align*}
+
+$\Omega$, once again, refers to the linear context of wire variables.
+$\Gamma$ refers to the nonlinear context of host language variables.
+So while $\Omega$ contains exclusively tensor products of bits and qubits, $\Gamma$ can contain natural numbers, functions, and circuits.
+And while variables in $\Omega$ must all be used exactly once, variables in $\Gamma$ can be used arbitrarily many times or even not at all.
+
+\todo{it might be better to inline the typing rules here}
+
+All of the circuit typing rules are presented in Figure~\ref{fig:circuit_typ_der}
+The OUTPUT rule provides a way to terminate a circuit with some collection of wires.
+Note that this rule provides no direct way have values bound in $\Gamma$ influence $p$. \ls{how useful is this observation?}
+
+The GATE rule ensures that inputs consumed by a gate cannot be used in the resulting circuit, unless of course the gate leaves those wires unchanged.
+It accomplishes this by having the typing assumption for the continuation $C$ replace the context with the single pattern output by the gate.
+So none of the inputs to the gate are in scope when typing the continuation.
+
+The UNBOX rule proves one way to have the host context $\Gamma$ influence a circuit.
+The UNBOX rule requires a circuit $\coqfont{c}$ to be typed in the host typing derivation.
+Unlike wire values, this circuit could come as the input of some host level function or be the direct result of some complex host level computation.
+It also requires and consumes an input pattern, preventing wire variables from being forgotten or reused.
+
+The LIFT rule provides another, more subtle, way for $\Gamma$ to influence a circuit.
+As previously mentioned the \coqfont{lift} keyword is used for dynamic lifting. \ls{not sure the reader remembers what that is}
+Note that unlike the GATE rule, the LIFT rule binds a variable by adding it to the host context $\Gamma$.
+It uses the \coqfont{|$\cdot$|} function to map wire types onto products of booleans.
+This allows us to use host language control flow operators on this value, selecting between one of many different circuits to apply to the remaining quantum wires in $\Omega_2$.
+
+The COMPOSE rule lets you take the output wires of some circuit and use it in defining some continuation circuit.
+This is particularly useful in connecting unboxed circuits with gates.
+
+Finally, we have the host level typing derivation, with the below shape.
+\begin{align*}
+\Gamma \vdash e : \tau
+\end{align*}
+
+Most of this typing derivation is going to be dependent on the host language.
+There are only two rules that are specific to Qwire.
+First we have the BOX rule, which allows us to take an open circuit, give a type for its input, and store it as a host term.
+\begin{mathpar}
+\inferrule*[Right=BOX]
+    {\Omega \Rightarrow p : W_1 \and \Gamma; \Omega \vdash C : W_2}
+    {\Gamma \vdash \coqfont{box (p}: W_1) \Rightarrow C : \coqfont{Circ}(W_1, W_2)}
+\end{mathpar}
+
+Second we have the RUN rule, which allows us to take a circuit with no inputs, execute it and return the measured results.
+\begin{mathpar}
+\inferrule*[RIGHT=RUN]
+    {\Gamma; \cdot \vdash C : W}
+    {\Gamma \vdash \coqfont{run } C : |W|}
+\end{mathpar}
+This typing rule forces the argument of \coqfont{run} to have no inputs by forcing it to be typed with an empty wire context.
+
+\begin{figure}[t]
+    \rulefiguresize
+    \begin{mathpar}
+        \inferrule*[]{ }{ \emptyc \Rightarrow \unitv : \unitt}
+        \and
+        \inferrule*[]{ }{x : W \Rightarrow x : W}  
+        \and
+        \inferrule*[]
+            {\Omega_1 \Rightarrow p_1 : W_1 \and \Omega_2 \Rightarrow p_2 : W_2}
+            {\Omega_1,\Omega_2 \Rightarrow (p_1,p_2) : W_1 \otimes W_2}  
+    \end{mathpar}
+    \caption{Inference rules for wire typing derivation}
+    \label{fig:wire_type_der}
+\end{figure}
+
+\begin{figure}[t]
+\rulefiguresize
+\begin{mathpar}
+    \inferrule* [Right=Output]
+        {\Omega \Rightarrow p : W }
+        { \Gamma;\Omega \vdash \coqfont{output}(p) }
+    \and
+    \inferrule* [Right=Gate]
+        {\Omega_1 \Rightarrow p : W_1 \and \coqfont{g} \in \coqfont{gate}(W_1,W_2) \and \Gamma; x : W_2, \Omega_2 \vdash C : W}
+        {\Gamma;\Omega_1, \Omega_2\vdash x \leftarrow \coqfont{gate g p}; C : W }  
+    \and
+    \inferrule*[Right=Unbox]
+        {\Omega \Rightarrow p : W_1 \and \Gamma \vdash \coqfont{c} : \coqfont{Circ}(W_1,W_2)}
+        {\Gamma;\Omega\vdash \coqfont{unbox c p} : W_2 }  
+    \and
+    \inferrule*[Right=Compose]
+        {\Gamma; \Omega_1 \vdash C : W_1\and \Omega \Rightarrow p : W \and \Gamma;\Omega,\Omega_2 \vdash C' : W_2}
+        {\Gamma; \Omega_1, \Omega_1 \vdash p \leftarrow C; C' : W_2}
+    \and
+    \inferrule*[Right=Lift]
+        {\Omega_1 \Rightarrow p : W_1 \and \Gamma, x : |W_1|; \Omega_2 \vdash C : W_2}
+        {\Gamma;\Omega_1, \Omega_2 \vdash x \Leftarrow \coqfont{lift }p; C : W_2}
+\end{mathpar}
+    \caption{Inference rules for circuit typing derivation}
+    \label{fig:circuit_typ_der}
+\end{figure}
+
+\subsection{Functional Entanglement Implementation}
+
+\paragraph{Dependent Types}
+In this presentation we assume that the host language has dependent types.
+In the background section we talked extensively about $n$ by $n$ quantum circuits for abstract $n$.
+Dependent types allow us to parameterize the types of wires and circuits with sizes.
+This allows us to fully formalize the example circuit in full generality.
+
+To begin, we can write the following host level function from positive integers to wire types that implements sized qubit vectors.
+\begin{lstlisting}[style=customcoq]
+Fixpoint qubits (n : pos) : WireType :=
+    match n with
+    | 1 => qubit
+    | S m => qubit <@$\otimes$@> (qubits m)
+    end. 
+\end{lstlisting}
+
+Then we can formalize the extended hadarmard circuit, as well as an n qubit ancillary 0 state.
+\begin{lstlisting}[style=customcoq]
+Fixpoint extended_had (n : pos) : Circ (qubits n, qubits n) :=
+    match n with
+    | 1 => box (x : qubit) => x <- gate hadamard x; output x
+    | S m => box ((x, y) : (qubit <@$\otimes$@> qubits m)) => 
+                x <- gate hadamard x;
+                y <- unbox (extended_had m) y;
+                output (x,y)
+    end.
+
+Fixpoint extended_zero (n : pos) : Circ (<@\unitt@>, qubits n) :=
+    match n with
+    | 1 => box (_ : <@\unitt@>) => x <- gate new0 (); output x
+    | S m => box (_ : <@\unitt@>) =>
+                x <- gate new0 ();
+                y <- unbox extend_zero m;
+                output (x,y)
+    end.
+\end{lstlisting}
+
+
+With these programs written, we can write a function that takes in a size $n$, a $2n$ by $2n$ circuit that we assume is the quantum oracle of some function, and produce the functional entanglement circuit.
+\begin{lstlisting}[style=customcoq]
+Definition functional_entanglement (n : pos) 
+    (Qf : Circ(qubits (2 * n), qubits (2 * n) )) : Circ (<@\unitt@>, qubits (2 * n) ) :=
+        box (_ : <@\unitt@>) =>
+            x <- unbox extended_zero n;
+            y <- unbox extended_zero n;
+            x <- unbox (extended_had n) x 
+            unbox Qf (x,y).
+\end{lstlisting}
+
+This program precisely matches the circuit description.
+It is important to note that while this section is written mostly in Coq syntax for the host language, actually using Coq's dependent types for this purpose would be more complicated than it appears here.
+
+%here I am not entirely sure, maybe bring it up with Steve I feel like 
+%explaining every rule for the operational semantics
+% I would argue I am more interested in the types, so I can gloss over the specific inference
+% rules
+\subsection{Qwire Operational Semantics}
+Qwire has an operational semantics based on the operational semantics for the host language.
+Given the relations $\hoststep$, which is a small step semantics for host terms, and $\boxstep$, which is a small step semantics for boxed circuits,
+we can define $\Rightarrow$, the small step semantics for circuits.
+We also assume that the host language has some way of simulating quantum circuits in order to simulate the run keyword.
+\ls{here I can point a pointer to a figure that just includes all of the rules}
+
+Let us assume that $\hoststep$ satisfies progress, preservation and strong normalization.
+Then we can prove the corresponding properties of Qwire.
+In these theorem statements, the variable $\mathscr{Q}$ ranges over wire contexts where every variable either has type qubit or bit.
+An open circuit $C$, where $\cdot;\mathscr{Q}\vdash C : W$, is normal if it consists only of output statements, gate applications, and dynamic lift statements.
+As the name normal suggests, such circuits cannot reduce any further.
+
+\begin{theorem}[Preservation]
+\thmbegin
+\begin{enumerate}
+    \item If $\cdot \vdash t : \tau$ and $t \rightarrow t'$, then $\cdot \vdash t' : \tau$.
+    \item If $\cdot; \mathscr{Q}\vdash C : W$ and $C \Rightarrow C'$ then $\cdot; \mathscr{Q}\vdash C' : W$.
+\end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Progress]
+\thmbegin
+\begin{enumerate}
+    \item If $\cdot \vdash t : \tau$, then either there exists some term $t'$ such that $t \rightarrow t'$, or $t$ is a value.
+    \item If $\cdot;\mathscr{Q}\vdash C : W$ then either $C$ is normal or there exists some term $C'$ such that $C \Rightarrow C'$.
+\end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Strong Normalization]
+\thmbegin
+\begin{enumerate}
+    \item If $\cdot \vdash t : \tau$ then there exists some value $v$ such that $t \rightarrow^* v$.
+    \item If $\cdot; \mathscr{Q}\vdash C : W$ then there exists some normal circuit $N$ such that $C \Rightarrow^* N$.
+\end{enumerate}
+\end{theorem}
+\subsection{Qwire Denotational Semantics}
+While progress, preservation, and strong normalization are all very useful properties for programming languages, they don't directly relate to some of the core issues of quantum programming.
+In particular, these theorems do not neccessarily imply that inhabitants of circuit types are implementable even by idealized quantum computers.
+We could have relaxed the constraints of the linear types, and ended up with a language that could have been useful for reasoning about classical circuits that has those properties as well.
+
+Qwire also comes with a denotational semantics specifically for circuits.
+This denotational semantics assigns every well typed circuit to matrices that map density matrices over the input wire denotation to density matrices over the output wire denotation.
+This wire type denotation is given below.
+\begin{align*}
+[bit] = [qubit] &= \mathbb{C}^2\\
+[W_1 \otimes W_2] &= [W_1] \otimes [W_2]\\
+[\unitt] &= \mathbb{C}
+\end{align*}
+Take as a given that all of the above vector spaces are restricted to unit norm vectors.
+%here I am actually kind of confused, the paper says circuits are operators between density matrices
+%but shouldn't that be the same as operators between hilbert spaces
+%maybe no because of meas and new
+% every operator between hilbert spaces can be lifted to an operator between density matrices
+% but the other way around does not hold
+% at least I am pretty confident my misundertanding lies in this part and not the other
+We can denote $[\cdot; \Omega \vdash C : W ]$ as a superoperator from $[\Omega]^*$ to $[W]^*$.
+At a base level, this requires denoting every gate as a superoperator as well.
+For unitary matrices, this is done as normal.\todo{fill in more when I understand more }
+Here are some of the denotations of other mentioned gates \ls{bad sentence}.
+\begin{align*}
+[init0] &= (\ket{0}\ket{0}^\dagger)^*\\
+[init1] &= (\ket{1}\ket{1}^\dagger)^*\\
+[meas]  &= (\ket{0}\ket{0}^\dagger)^* + (\ket{1}\ket{1}^\dagger)^*
+\end{align*}
+
+With all of these pieces in place, the denotational semantics satisfies the following theorem.
+\begin{theorem}
+If $\cdot;\mathscr{Q}\vdash C : W$ and $C \Rightarrow C'$ then 
+$[\cdot;\mathscr{Q}\vdash C : W] = \cdot;\mathscr{Q}\vdash C' : W$.
+\end{theorem}
+
+This theorem assures us that, assuming all of the given gates are realizable by our quantum computer, then every circuit specified in a Qwire program is realizable on our idealized quantum computer.

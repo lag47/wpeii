@@ -1,0 +1,2252 @@
+1
+
+Types and Quantum Programming Languages
+
+2
+
+3
+
+Quantum algorithms can provide asymptotic improvement over classical algorithms in key problems like 4
+
+integer factorization. However, they require a very different set of abstractions and tools than classical 5
+
+computing. Quantum algorithms typically reason explicitly about quantum gates and wires. If used or composed 6
+
+incorrectly, these elements will not form circuits that can actually be implemented by any quantum computers.
+
+7
+
+The simple act of forking a wire is invalid in the language of quantum circuits. This has led to a rich vein of 8
+
+programming languages research to use types to statically ensure properties of quantum programs, as well as 9
+
+allow abstraction, code reuse and code verification. This paper introduces three, typed quantum programming 10
+
+languages, the classic Quantum Lambda Calculus, and the modern Qwire and Quipper. To give the reader the 11
+
+proper context to understand these languages, core concepts of quantum computing, like qubits, quantum 12
+
+circuits, and entanglement are explained. This paper will also discuss efforts to apply formal methods to each of these languages. A researcher with a strong background in programming languages theory and is 13
+
+familiar with undergraduate level linear algebra should come away from this paper understanding these three 14
+
+languages and with enough background to read quantum programming languages papers.
+
+15
+
+16
+
+1
+
+BACKGROUND
+
+17
+
+1.1
+
+Qubits and Quantum State Systems
+
+18
+
+19
+
+The most basic unit of data in quantum computing is called the qubit. As the name suggests, a 20
+
+qubit is a quantum computing generalization of the classical bit. A bit is some object, typically a 21
+
+wire, that can be in one of two states labelled 0 and 1. A qubit is some object that can be in any of 22
+
+the states, 0, 1, or a linear combination of 0 and 1 with possibly complex valued weights. In other 23
+
+words, a bit is an element of some finite type of size two, while a qubit is an element of the type of 24
+
+complex valued vectors of size two. Qubits are actually even more constrained. The norm of the 25
+
+the vector must also be one. To show some concrete examples, we must first introduce a little bit of 26
+
+notation. In this paper, we will use the bra-ket notation, a way of denoting vectors that came out of 27
+
+the quantum mechanics literature and is standard in this field.
+
+|
+
+1
+
+28
+
+0⟩ is the vector
+
+, the vector with a 1 in the 0th element, and 0’s everywhere else. |1⟩ is the 0
+
+29
+
+vector [0,1], the vector with a 1 in the 1st element, and 0’s everywhere else. Note that |0⟩ and |1⟩
+
+2
+
+30
+
+form a basis for the vector space
+
+C . Given a Greek letter, for example 𝜙 , |𝜙 ⟩ refers to an arbitrary 31
+
+state of a qubit. So any element of that space can be written as 𝛼 |0⟩ + 𝛽 |1⟩ for some 𝛼 and 𝛽 where 2 + 2
+
+32
+
+𝛼
+
+𝛽
+
+= 1. The complex numbers 𝛼 and 𝛽 are called the amplitudes of the states 0 and 1. We call 33
+
+any state with nonzero 𝛼 and 𝛽 a superposition of the classical states 0 and 1. One example is the
+
+√
+
+
+
+
+
+1/
+
+2
+
+34
+
+vector
+
+√
+
+, which represents an equal superposition of the states 0 and 1.
+
+1/
+
+2
+
+35
+
+Unlike with classical bits, we cannot directly observe what precise state a qubit is in. There is 36
+
+no operation we can perform on a qubit that will tell us the amplitudes of that state. The only 37
+
+operation we can perform that gives us some information about the state is quantum measurement.
+
+38
+
+If you measure a qubit in the state |𝜙 ⟩ = 𝛼 |0⟩ + 𝛽 |1⟩, then you will observe either the classical state 39
+
+2
+
+2
+
+0 with probability 𝛼
+
+or the classical state 1 with probability 𝛽 . Note that is a valid probability 40
+
+space precisely because the norm of |𝜙 ⟩ is required to be 1. This measurement operation affects the 41
+
+state as well. After measurement, the state becomes the classical state that was just measured. So if 42
+
+measure a state twice in immediate succession, then you will observe the same state each time.
+
+43
+
+For example, if you measure the state |0⟩, you will observe 0 and the state of the qubit will remain
+
+√
+
+√
+
+44
+
+|0⟩. But if you measure |𝜙⟩ = [1/ 2, 1/ 2], then there is a 1/2 chance that you will observe 0 and 45
+
+Author’s address:
+
+46
+
+47
+
+2022. XXXX-XXXX/2022/3-ART $15.00
+
+48
+
+https://doi.org/10.1145/nnnnnnn.nnnnnnn
+
+49
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+2
+
+50
+
+the state will change to be |0⟩, and there is a 1/2 chance that you will observe 1 and the state will 51
+
+change to be |1⟩.
+
+52
+
+Note that qubits carry more information than is encoded in the measured distribution. The states 53
+
+|0⟩, − |0⟩ and 𝑖 |0⟩ will all be measured to be in state 0 with probability 1, but they are distinct states.
+
+54
+
+And this distinction is essential in quantum algorithms.
+
+55
+
+We can extend this notion of quantum states from a single qubit to a system of n qubits. The
+
+𝑛
+
+2
+
+56
+
+state of an n qubit system is represented by a vector in C
+
+whose norm is 1. Just as in the single
+
+57
+
+qubit system, if x is a sequence of n bits, and therefore a classical state in an n bit system, then |𝑥 ⟩
+
+58
+
+is the quantum state where the xth index is a 1 and all other indices are 0. Once again, the classical 59
+
+states form a basis for the quantum states.
+
+60
+
+It is important to be able to distinguish between the mathematical denotation of an n qubit 61
+
+system and the physical implementation of it. From a mathematical standpoint, an n qubit state
+
+𝑛
+
+2
+
+62
+
+is a unit vector in
+
+C
+
+. From a physical standpoint, it is n specially prepared objects that each 63
+
+could be measured to be in one of two states. Here, we can begin to see where some of the power
+
+𝑛
+
+64
+
+of quantum computing comes from. Viewed classically, such a system has only 2
+
+states. Viewed
+
+65
+
+through quantum mechanics, it can encode exponentially more states (actually wouldn’t it be 66
+
+infinite? it is just exponentially when you account for approx due to fp). However, our inability to 67
+
+directly read quantum states the way that we can read classical states is still a major limitation.
+
+68
+
+Once again, we can only measure the state of an n qubit system and observe a single classical 69
+
+state of the system with a probability equal to the squared norm of the amplitude of that state.
+
+70
+
+The state can also be partially measured, measuring the state of some qubits but leaving others 71
+
+unobserved. Modeling this is important for giving complete semantics to quantum programs, but 72
+
+no examples in this paper will require knowledge in that depth. [LS: Should I explain the math of 73
+
+such observations or leave that out?] [LS: I feel like this is too much straightline text, more of the 74
+
+math should be factored into easily readable and eyecatching lines]
+
+75
+
+76
+
+1.2
+
+Quantum Entanglement
+
+77
+
+In multiple qubit systems, the complicated phenomenon of quantum entanglement arises. For a 78
+
+concrete example, let us consider a 2 qubit system, whose state can be modeled by unit vectors in 79
+
+4 . This system has the classical states |00⟩ , |01⟩ , |10⟩ , 𝑎𝑛𝑑 |11⟩ along with the equal superposition 80
+
+C
+
+state. In also has states like |𝜙 ⟩ =
+
+1
+
+√
+
+|00⟩ + 1
+
+√
+
+|11⟩. This state is unique in two important ways.
+
+81
+
+2
+
+2
+
+82
+
+First, look at the distribution we get out if we measure |𝜙 ⟩. With 1/2 chance, both of the qubits 83
+
+are observed to be 0, and with 1/2 chance, both of the qubits are observed to be 1. These qubits 84
+
+are constrained to be observed to have the same value. |𝜙 ⟩ is also unique because it cannot be 85
+
+decomposed into the tensor product of two states from a 1 qubit system. (Maybe just focus on the 86
+
+first part)
+
+87
+
+Entanglement allows us, in certain cases, to take a set of useful classical states and increase the 88
+
+probability of measuring them at the cost of probability of measuring useless classical states. [LS: I 89
+
+am not sure I have covered this topic enough, I am also not sure how much to foreground it]
+
+90
+
+91
+
+1.3
+
+Quantum Gates And Circuits
+
+92
+
+Now that we have a basic understanding of what a qubit is, we can talk more about the operations 93
+
+that we can perform on them. We have already discussed measurement, but measuring a state is 94
+
+only useful if we have carefully prepared it to have some useful properties already. How can we go 95
+
+from a normal classical state to some sort of usefully entangled one? And how do we know what 96
+
+information these measurements can actually tell us?
+
+97
+
+98
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+Types and Quantum Programming Languages 3
+
+99
+
+Asides from measurement, we directly manipulate quantum state systems by running them 100
+
+through quantum circuits. Quantum circuits are a straightforward analogue to standard boolean 101
+
+circuits. Quantum circuits are composed of quantum gates connected by a series of wires. Think of 102
+
+these wires as carrying qubits from the output of one gate to the input of another. Just like boolean 103
+
+circuit gates, these gates implement some function on their inputs and output the results.
+
+104
+
+However, all quantum gates, and therefore quantum circuits as well, implement reversible, linear 105
+
+functions. In fact the full restriction is that an n qubit quantum circuit is denoted by unitary matrix
+
+𝑛
+
+𝑛
+
+2
+
+×2
+
+106
+
+from
+
+C
+
+. square matrix is unitary if its inverse is its complex conjugate. Three important facts 107
+
+are implied by this constraint. First, unitary matrices preserve the norm of vectors they are applied 108
+
+to. This means that quantum circuits never take a qubit to some non unit norm vector. Second, 109
+
+unitary matrices have inverses, so any quantum circuit is reversible. And third, matrices are all 110
+
+linear functions. Since the classical states form a basis for any quantum state system, this means 111
+
+that the behavior of quantum circuits is fully determined by its behavior on classical states.
+
+1
+
+1
+
+1
+
+
+
+112
+
+One important 1 qubit gate is the hadamard gate, H. It is denoted by the matrix √
+
+. If
+
+1 −1
+
+2
+
+√
+
+√
+
+113
+
+you consider applying the hadamard gate to |0⟩ and |1⟩, you will see that 𝐻 |0⟩ = ( 1/ 2//1/ 2 ) and
+
+√
+
+√
+
+114
+
+𝐻 |1⟩ = ( 1/ 2//1/ 2 ). This shows that the hadamard gate takes classical states to states in equal 115
+
+superposition.
+
+116
+
+Another important gate is the CNOT, or controlled-not, gate. It is a 2 qubit gate. One input is 117
+
+the control qubit and the other is the target qubit. Focusing on its affect on classical states, CNOT
+
+118
+
+checks the control qubit, if it is |0⟩ it leaves the target qubit alone, and if it is |1⟩ then it flips the 119
+
+target qubit. Knowing this, we can write the 4 × 4 matrix that it implements.
+
+120
+
+1
+
+0
+
+0
+
+0
+
+121
+
+©0
+
+1
+
+0
+
+0ª
+
+122
+
+­
+
+®
+
+­0
+
+0
+
+0
+
+1®
+
+123
+
+­
+
+®
+
+0
+
+0
+
+1
+
+0
+
+124
+
+«
+
+¬
+
+125
+
+This is a simple permutation matrix that flips the 3rd and 4th index of a vector. In circuit diagrams, 126
+
+we represent applying CNOT to two wires with the following symbol.
+
+127
+
+128
+
+129
+
+The wire with the filled in circle is the control qubit, and the wire with the open circle wire a 130
+
+target is the target qubit.[LS: that is worded a bit confusingly]
+
+131
+
+With the hadamard and CNOT gates, we can create an entangled state. But in order to due that, 132
+
+we need to understand how to combine quantum state systems. Given two quantum state systems, 133
+
+we can combine them using the tensor product.[LS: Should I introduce the tensor product or is 134
+
+𝑛
+
+2
+
+that assumed ] So combining an n qubit system, represented by unit vectors in
+
+, with an m
+
+135
+
+C
+
+𝑚
+
+2
+
+qubit system, represented by unit vectors in
+
+, we get an 𝑛 + 𝑚 qubit system, represent by unit 136
+
+C
+
+𝑛+𝑚
+
+2
+
+vectors in
+
+. If the n qubit system is in state |𝜙 ⟩ and the m qubit system is in state |𝜙
+
+⟩, then
+
+137
+
+C
+
+𝑛
+
+𝑚
+
+the combined system is in state |𝜙
+
+⊗ 𝜙 ⟩. However, while we can also combine state systems with 138
+
+𝑛
+
+𝑚
+
+the tensor product, we cannot always decompose the combined system back into the components.
+
+139
+
+These states that cannot be decomposed are the entangled states. [LS: this paragraph is awkward].
+
+140
+
+Consider the below circuit.
+
+141
+
+𝑞
+
+𝑞2
+
+142
+
+1
+
+143
+
+|0⟩
+
+𝐻
+
+144
+
+145
+
+|0⟩
+
+146
+
+147
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+4
+
+148
+
+We begin with two qubits, both in the |0⟩ state. Then we use a hadamard gate to change the state
+
+√
+
+
+
+
+
+149
+
+1/
+
+2
+
+of the top qubit into into the equal superposition
+
+√
+
+. By taking the tensor product, we can see
+
+1/
+
+2
+
+150
+
+√
+
+
+
+!
+
+1/
+
+2
+
+151
+
+0
+
+1
+
+the total state at this point 𝑞
+
+is
+
+√
+
+. We can also write this state as √
+
+|00⟩ + 1
+
+√
+
+|10⟩, an equal
+
+1
+
+1/
+
+2
+
+2
+
+2
+
+152
+
+0
+
+153
+
+superposition between the 00 and 10 states. Then, 𝑞
+
+is subjected to the CNOT gate, which swaps
+
+1
+
+√
+
+
+
+!
+
+154
+
+1/
+
+2
+
+0
+
+the 3rd and 4th indices creating the state 𝑞
+
+=
+
+. This state is one of the entangled states that 155
+
+2
+
+0
+
+√
+
+1/
+
+2
+
+156
+
+1
+
+we previously discussed and can be written as √
+
+|00⟩ + 1
+
+√
+
+|11⟩.
+
+157
+
+2
+
+2
+
+Circuits that create useful entangled states often start out with quantum states that put all 158
+
+classical states in equal superposition. We can accomplish this with a series of hadamard gates.
+
+159
+
+Given an 𝑛 qubit system, applying a single hadamard gate to each wire will have the effect of taking 160
+
+𝑛
+
+the state |0 ⟩ to an equal superposition of all classical states. This circuit is called 𝐻 .
+
+161
+
+𝑛
+
+162
+
+1.4
+
+Quantum Oracles
+
+163
+
+𝑛
+
+𝑚
+
+164
+
+Suppose we have a boolean valued function 𝑓 from 2
+
+to 2
+
+for some 𝑛 ≥ 𝑚. We know that we can
+
+165
+
+create a classical circuit that computes this function. However, all quantum circuits are invertible, 166
+
+and 𝑓 might not be an invertible function. However, we can (often? need to get clarification on this) 167
+
+embed 𝑓 in a quantum circuit as what is called a quantum oracle. A quantum oracle for a function
+
+𝑛
+
+𝑚
+
+168
+
+𝑓
+
+: 2
+
+→ 2
+
+is an 𝑛 + 𝑚 qubit circuit whose behavior on classical states is the below two equations.
+
+169
+
+The second equation is a straightforward corollary of the first, but it is important to point it out 170
+
+because it gets to the heart of the purpose of quantum oracles. You can think of the bottom wire as 171
+
+a kind of m qubit workspace. If you have some classical state that you want to apply 𝑓 to, you can 172
+
+feed it into the top n qubits, and feed 0 into the bottom m qubits and then have that unchanged 173
+
+state along the top wire and the actual function output will be written onto the workspace.
+
+174
+
+For a concrete example, we can show the whole circuit for a quantum oracle for the exclusive-or 2
+
+1
+
+175
+
+function. ⊕ is a function from 2
+
+to 2 , and its quantum oracle is the below 3 qubit circuit.
+
+176
+
+|𝑥 ⟩
+
+|𝑥 ⟩
+
+177
+
+|𝑦⟩
+
+|𝑦⟩
+
+178
+
+179
+
+|𝑧⟩
+
+| (𝑥 ⊕ 𝑦) ⊕ 𝑧⟩
+
+180
+
+To understand this circuit, we can analyze how it transforms classical states. The first thing to 181
+
+notice about this circuit is that the upper two wires, 𝑥 and 𝑦 , remain unchanged. The second thing 182
+
+to notice is that the third wire, initially carrying 𝑧 , gets flipped up to two times, one for each of 𝑥
+
+183
+
+and 𝑦 that is in a 1 state. As noted in the diagram, this is equal to (𝑥 ⊕ 𝑦) ⊕ 𝑧. This means that the 184
+
+circuit satisfies the equations of the quantum oracle for exclusive-or.
+
+185
+
+186
+
+1.5
+
+QRAM Model of Quantum Computing
+
+187
+
+We now have discussed quantum state systems and how to transform them using quantum circuits.
+
+188
+
+However, these tools do not tell we can effectively use these tools. The primary point of quantum 189
+
+programs is to take problems that come up in classical settings, like integer factorization for example, 190
+
+and use quantum circuits to perform key parts of an algorithm to solve the problem.[LS: This is 191
+
+a subtle and complicated idea I am not currently getting across well]. This can even happen in a 192
+
+loop, with a classical computer repeatedly designing a circuit, sending it to a quantum computer 193
+
+computer to be run, and then recording some information and designing new circuits based on 194
+
+that. The QRAM model is an abstraction for quantum computing that maintains a distinction 195
+
+196
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+Types and Quantum Programming Languages 5
+
+197
+
+between a quantum computer, which can realize a specification for a quantum circuit and then 198
+
+execute it, and a classical computer, which can perform all of the normal functions of a computer, 199
+
+including writing specifications for quantum circuits.[LS: That programs can write other programs 200
+
+should be a familiar idea for PL people] Each language discussed in this paper realizes this model 201
+
+of computation in some way.
+
+202
+
+203
+
+1.6
+
+Running Example: Functional Entanglement
+
+204
+
+𝑛
+
+𝑛
+
+Consider a fixed positive number 𝑛, along with a fixed quantum oracle 𝑄
+
+where 𝑓
+
+: 2
+
+→ 2 . We
+
+𝑓
+
+205
+
+can construct the below 2𝑛 qubit quantum circuit whose inputs are fixed to be the classical state 206
+
+|0⟩ scaled up to 𝑛 qubits.
+
+207
+
+( 1
+
+√
+
+Í
+
+|
+
+𝑛
+
+Í
+
+𝑥 ⟩) ⊗ |0 ⟩
+
+1
+
+√
+
+|𝑥 ⟩ ⊗ | 𝑓 (𝑥 )⟩
+
+208
+
+𝑥
+
+𝑥
+
+2𝑛
+
+2𝑛
+
+209
+
+210
+
+|0⟩ ⊗𝑛
+
+𝐻𝑛
+
+211
+
+𝑄 𝑓
+
+212
+
+|0⟩ ⊗𝑛
+
+213
+
+214
+
+Í
+
+𝑛
+
+The circuit diagram marks the intermediate state (
+
+1
+
+√
+
+|𝑥 ⟩) ⊗ |0 ⟩. The state at this point in
+
+𝑥
+
+215
+
+2𝑛
+
+the circuit is the tensor product of the state of the upper wire, which is an equal superposition of 216
+
+all classical states, and the state of the lower wire, which is just the classical state of all 0’s. We 217
+
+derive this from the behavior from the top row of the extended hadamard gate 𝐻
+
+. The following
+
+𝑛
+
+218
+
+reasoning shows how this intermediate state transforms into the final state in the diagram.
+
+219
+
+220
+
+221
+
+1
+
+∑︁
+
+222
+
+𝑛
+
+𝑄
+
+( ( √
+
+|𝑥 ⟩) ⊗ |0 ⟩) =
+
+(1)
+
+𝑓
+
+223
+
+2𝑛
+
+𝑥
+
+224
+
+1
+
+∑︁
+
+𝑛
+
+𝑄
+
+( √
+
+(|𝑥 ⟩ ⊗ |0 ⟩)) =
+
+(2)
+
+𝑓
+
+225
+
+2𝑛
+
+𝑥
+
+226
+
+1
+
+∑︁
+
+𝑛
+
+227
+
+√
+
+𝑄
+
+(|𝑥 ⟩) ⊗ |0 ⟩) =
+
+(3)
+
+𝑓
+
+2𝑛
+
+228
+
+𝑥
+
+229
+
+1
+
+∑︁
+
+√
+
+(|𝑥 ⟩ ⊗ | 𝑓 (𝑥 )⟩)
+
+(4)
+
+230
+
+2𝑛
+
+𝑥
+
+231
+
+232
+
+The first two lines are equal because the tensor product is linear in both of its arguments. The 233
+
+next two lines are equal because 𝑄
+
+is also a linear transformation. And the final two lines are
+
+𝑓
+
+234
+
+equal by the definition of a quantum oracle.
+
+235
+
+1
+
+Í
+
+1
+
+The final state, √
+
+(|𝑥 ⟩ ⊗ | 𝑓 (𝑥 )⟩), has the property that that the 𝑥 × 𝑦th coordinate is √
+
+if
+
+𝑥
+
+236
+
+2𝑛
+
+2𝑛
+
+𝑦 = 𝑓 (𝑥 ) and 0 otherwise. Preparing this state is part of several quantum algorithms, including 237
+
+Shor’s factorization algorithm. Intuitively, this state is useful because it turns this sequence of 238
+
+qubits into a search space of every input-output pair in 𝑓 . Even though this system only requires 2𝑛
+
+239
+
+2𝑛
+
+qubits to represent, it still encodes all 2
+
+possible input-output pairs. From this state, we can solve 240
+
+problems by carefully designing quantum circuits to have “good” input-output pairs reinforce each 241
+
+other and “bad” input-output pairs interfere with each other, leading to a final state with a high 242
+
+probability of measuring a “good” input-output pair. This paper will use this circuit as a running 243
+
+example, to see how the different languages each encode this.
+
+244
+
+245
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+6
+
+246
+
+1.7
+
+Static and Dynamic Lifting
+
+247
+
+1.8
+
+Density Matrix Representation
+
+248
+
+2
+
+QWIRE
+
+249
+
+The Qwire language is parameterized by a host language. In this sense, Qwire really describes 250
+
+a family of languages and not a single one. However, with only a few assumptions about the 251
+
+host language, namely that it has booleans, product types, and is strongly normalizing [LS: big 252
+
+assumption can’t brush past this easily], we can give a formal semantics to Qwire.
+
+253
+
+254
+
+255
+
+2.1
+
+Introduction to Qwire
+
+256
+
+Qwire breaks up reasoning about quantum programs into three levels. At the top, we have the host 257
+
+language capable of everything that a strongly normalizing functional programming language can 258
+
+do. We require that this host level have boolean and pair types, and we extend the host language 259
+
+with a new type of circuits. Then we have the circuit layer, which is isolated into a special modality.
+
+260
+
+It is only in that modality that we can directly manipulate the final level, wires. Much like in 261
+
+our original introduction of quantum programming, circuits are made up of quantum gates and 262
+
+wires. Unlike in the quantum lambda calculus, wires and qubits are not standard terms that can be 263
+
+manipulated anywhere in the language. We cannot create functions from qubits to qubits in Qwire.
+
+264
+
+However, a circuit can be parameterized on initial input wires, acting like a function over qubits.
+
+265
+
+With these tools, we can easily define a a circuit that creates the entanglement of the states |00⟩
+
+266
+
+and |11⟩.
+
+267
+
+[TODO: make up some kind of syntax highlighting? ] [TODO: put these next to each other]
+
+268
+
+269
+
+x
+
+gate new0 ();
+
+270
+
+y
+
+gate new0 ();
+
+271
+
+x
+
+gate hadamard x;
+
+272
+
+o
+
+gate control not (x,y);
+
+273
+
+output o
+
+274
+
+275
+
+𝑞
+
+𝑞2
+
+1
+
+276
+
+277
+
+|0⟩
+
+𝐻
+
+278
+
+279
+
+|0⟩
+
+280
+
+[LS: maybe I need a version of this circuit with different annotations]
+
+281
+
+Inside this circuit, the gate keyword is used to both to create new qubits and apply gates. On 282
+
+the first two lines, we introduce new qubits initialized to the |0⟩ state with the new0 gate. Then 283
+
+we apply the hadamard gate to the x qubit. Note that we reuse the variable name x with variable 284
+
+shadowing. Because Qwire’s linear type system prevents us from using a wire value twice, this is 285
+
+fine[LS: very weaselly worded]. Qwire is parameterized on a collection of base gates. Each gate 286
+
+needs to be given a gate type, which specifies the input and output wires of the gate. The notion 287
+
+of gate here is broader than the notion of gate in the background section. In that section, gates 288
+
+only referred to reversible computations that perform no measurement and preserve superposition 289
+
+information. In Qwire these are called unitary gates, while standard gates include measurment 290
+
+and the initial prepration of classical states. Unitary gates can be inverted or controlled, producing 291
+
+new unitary gates.[LS: previous sentence not great] not is a unitary gate, so we can construct a 292
+
+controlled version not gate that behaves the same as the CNOT gate in the background section.
+
+293
+
+294
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+Types and Quantum Programming Languages 7
+
+[TODO: find better way to format this]
+
+295
+
+296
+
+𝑊
+
+::= qubit
+
+|
+
+bit
+
+|
+
+𝑊
+
+⊗ 𝑊
+
+1
+
+2
+
+297
+
+𝜏 ::= ...
+
+|
+
+bool
+
+|
+
+𝜏
+
+× 𝜏
+
+|
+
+Circ(𝑊 , 𝑊 )
+
+1
+
+2
+
+1
+
+2
+
+298
+
+299
+
+300
+
+2.2
+
+Circuit Host Language Interactions
+
+301
+
+There are two ways to take a circuit like that and embed it into the top level host language. The 302
+
+first way is to specify its inputs with and delimit it with the box keyword. The boxed circuit then 303
+
+becomes a term with a circuit type in the host language. The boxed circuit can then be unboxed 304
+
+and used in a circuit. The second way is to take a circuit with no undefined inputs and running it 305
+
+with the runkeyword. Intuitively, running a circuit first yields some quantum state, which is then 306
+
+implicitly measured. For example, consider running the code from above.
+
+307
+
+run
+
+308
+
+x
+
+gate new0 ();
+
+309
+
+y
+
+gate new0 ();
+
+310
+
+x
+
+gate hadamard x;
+
+311
+
+o
+
+gate control not (x,y);
+
+312
+
+output o
+
+313
+
+1
+
+This program would produce the state √
+
+(|00⟩ + |11⟩), and then measure both wires. This has an 314
+
+2
+
+equal likelihood of producing the pair (true,true) and the pair (false,false). Note that this means 315
+
+that you cannot preserve any part of the quantum system when finished running a circuit.
+
+316
+
+Only having static lifting is too restrictive for some quantum algorithms[TODO: at least have 317
+
+a citation, ideally a bit more of an explanation]. Sometimes, algorithms require certain wires to 318
+
+be measured while the rest of the state is preserved, and then determine what transformations to 319
+
+make to the remaining state from state based on the measured values. Qwire enables this with the 320
+
+lift keyword.
+
+321
+
+Consider the following example program with input wires x and y.
+
+322
+
+323
+
+b
+
+lift x;
+
+324
+
+y
+
+unbox (if b then c1 else c2) y; 325
+
+output y
+
+326
+
+This circuit observes the state in x and uses that value to decide which circuit to apply to y. This 327
+
+operation is very different from previous ones that we have seen in Qwire. At first, this might 328
+
+appear similar to the control gate. However, control only works on unitary gates, where the above 329
+
+program can work with arbitrary circuits. The extra power comes from the fact that the lift 330
+
+keyword creates a host language boolean value, not a circuit level wire. This gives us access to all 331
+
+of the tools of a full programming language to turn this measured value into a circuit.
+
+332
+
+333
+
+2.3
+
+Qwire Type System
+
+334
+
+Qwire uses a mixture of linear and non-linear types in order to prevent violations of quantum circuit 335
+
+rules with minimal extra burden placed on programmers. Linear types are used to prevent reuse of 336
+
+wire values inside of circuits. Non-linear types are used everywhere else in the host language[LS: 337
+
+bad parallelism]. To maintain this distinction, Qwire has three different typing derivations. The 338
+
+lowest level derivation is the wire typing derivation, which has the below shape.
+
+339
+
+Ω ⇒ 𝑝 : 𝑊
+
+340
+
+341
+
+Ω refers to a context of wire variables. Intuitively, 𝑝 is some arrangement of the wire variables in 342
+
+Ω with type 𝑊 . You can also read this derivation as saying that Ω is a collection of wires that have 343
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+8
+
+344
+
+been permuted into value 𝑝 with type 𝑊 . All of the inference rules for this derivation are given in 345
+
+Figure ??. These typing rules preserve the invariant that every variable bound in Ω is used in 𝑝
+
+346
+
+exactly once.
+
+347
+
+At the next level is the circuit typing derivation which has the below shape.
+
+348
+
+Γ; Ω ⊢ 𝐶 : 𝑊
+
+349
+
+350
+
+Ω, once again, refers to the linear context of wire variables. Γ refers to the nonlinear context of 351
+
+host language variables. So while Ω contains exclusively tensor products of bits and qubits, Γ can 352
+
+contain natural numbers, functions, and circuits. And while variables in Ω must all be used exactly 353
+
+once, variables in Γ can be used arbitrarily many times or even not at all.
+
+354
+
+[TODO: it might be better to inline the typing rules here]
+
+355
+
+All of the circuit typing rules are presented in Figure ?? The OUTPUT rule provides a way to 356
+
+terminate a circuit with some collection of wires. Note that this rule provides no direct way have 357
+
+values bound in Γ influence 𝑝. [LS: how useful is this observation?]
+
+358
+
+The GATE rule ensures that inputs consumed by a gate cannot be used in the resulting circuit, 359
+
+unless of course the gate leaves those wires unchanged. It accomplishes this by having the typing 360
+
+assumption for the continuation 𝐶 replace the context with the single pattern output by the gate.
+
+361
+
+So none of the inputs to the gate are in scope when typing the continuation.
+
+362
+
+The UNBOX rule proves one way to have the host context Γ influence a circuit. The UNBOX
+
+363
+
+rule requires a circuit c to be typed in the host typing derivation. Unlike wire values, this circuit 364
+
+could come as the input of some host level function or be the direct result of some complex host 365
+
+level computation. It also requires and consumes an input pattern, preventing wire variables from 366
+
+being forgotten or reused.
+
+367
+
+The LIFT rule provides another, more subtle, way for Γ to influence a circuit. As previously 368
+
+mentioned the lift keyword is used for dynamic lifting. [LS: not sure the reader remembers what 369
+
+that is] Note that unlike the GATE rule, the LIFT rule binds a variable by adding it to the host 370
+
+context Γ. It uses the |·| function to map wire types onto products of booleans. This allows us to 371
+
+use host language control flow operators on this value, selecting between one of many different 372
+
+circuits to apply to the remaining quantum wires in Ω .
+
+2
+
+373
+
+The COMPOSE rule lets you take the output wires of some circuit and use it in defining some 374
+
+continuation circuit. This is particularly useful in connecting unboxed circuits with gates.
+
+375
+
+Finally, we have the host level typing derivation, with the below shape.
+
+376
+
+Γ ⊢ 𝑒 : 𝜏
+
+377
+
+378
+
+Most of this typing derivation is going to be dependent on the host language. There are only 379
+
+two rules that are specific to Qwire. First we have the BOX rule, which allows us to take an open 380
+
+circuit, give a type for its input, and store it as a host term.
+
+381
+
+Ω ⇒ 𝑝 : 𝑊
+
+Γ; Ω ⊢ 𝐶 : 𝑊
+
+382
+
+1
+
+2
+
+BOX
+
+383
+
+Γ ⊢ box (p : 𝑊 ) ⇒ 𝐶 : Circ(𝑊 ,𝑊 )
+
+1
+
+1
+
+2
+
+384
+
+Second we have the RUN rule, which allows us to take a circuit with no inputs, execute it and 385
+
+return the measured results.
+
+386
+
+387
+
+Γ; · ⊢ 𝐶 : 𝑊
+
+𝑅𝑈 𝑁
+
+388
+
+Γ ⊢ run 𝐶 : |𝑊 |
+
+389
+
+390
+
+This typing rule forces the argument of run to have no inputs by forcing it to be typed with an 391
+
+empty wire context.
+
+392
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+Types and Quantum Programming Languages 9
+
+393
+
+Ω ⇒
+
+:
+
+Ω ⇒
+
+:
+
+1
+
+𝑝 1
+
+𝑊1
+
+2
+
+𝑝 2
+
+𝑊2
+
+394
+
+· ⇒ () : Unit
+
+𝑥 : 𝑊
+
+⇒ 𝑥 : 𝑊
+
+Ω
+
+⇒ (
+
+) :
+
+⊗
+
+1, Ω2
+
+𝑝 1, 𝑝2
+
+𝑊1
+
+𝑊2
+
+395
+
+396
+
+Fig. 1. Inference rules for wire typing derivation 397
+
+398
+
+399
+
+Ω ⇒ 𝑝 : 𝑊
+
+Ω ⇒
+
+g ∈ gate(
+
+)
+
+Γ;
+
+⊢
+
+1
+
+𝑝 : 𝑊1
+
+𝑊1, 𝑊2
+
+𝑥 : 𝑊2, Ω2
+
+𝐶 : 𝑊
+
+Output
+
+Gate
+
+400
+
+Γ; Ω ⊢ output(𝑝)
+
+Γ; Ω
+
+⊢
+
+1, Ω2
+
+𝑥 ← gate g p; 𝐶 : 𝑊
+
+401
+
+′
+
+402
+
+Ω ⇒ 𝑝 : 𝑊
+
+Γ ⊢ c : Circ(
+
+)
+
+Γ; Ω ⊢
+
+Ω ⇒
+
+⊢
+
+:
+
+1
+
+𝑊1, 𝑊2
+
+1
+
+𝐶 : 𝑊1
+
+𝑝 : 𝑊
+
+Γ; Ω, Ω2 𝐶 𝑊2
+
+Unbox
+
+Compose
+
+403
+
+Γ
+
+′
+
+; Ω ⊢ unbox c p : 𝑊
+
+Γ; Ω
+
+⊢
+
+:
+
+2
+
+1, Ω1
+
+𝑝 ← 𝐶 ; 𝐶
+
+𝑊2
+
+404
+
+405
+
+Ω ⇒
+
+Γ
+
+|; Ω ⊢
+
+1
+
+𝑝 : 𝑊1
+
+, 𝑥 : |𝑊1
+
+2
+
+𝐶 : 𝑊2
+
+Lift
+
+406
+
+Γ; Ω
+
+⊢
+
+1, Ω2
+
+𝑥 ⇐ lift 𝑝 ; 𝐶 : 𝑊2
+
+407
+
+408
+
+Fig. 2. Inference rules for circuit typing derivation 409
+
+410
+
+411
+
+2.4
+
+Functional Entanglement Implementation
+
+412
+
+Dependent Types. In this presentation we assume that the host language has dependent types.
+
+413
+
+In the background section we talked extensively about 𝑛 by 𝑛 quantum circuits for abstract 𝑛.
+
+414
+
+Dependent types allow us to parameterize the types of wires and circuits with sizes. This allows us 415
+
+to fully formalize the example circuit in full generality.
+
+416
+
+To begin, we can write the following host level function from positive integers to wire types that 417
+
+implements sized qubit vectors.
+
+418
+
+Fixpoint qubits (n : pos) : WireType :=
+
+419
+
+match n with
+
+420
+
+| 1 ⇒ qubit
+
+421
+
+| S m ⇒ qubit ⊗ (qubits m)
+
+422
+
+end.
+
+423
+
+Then we can formalize the extended hadarmard circuit, as well as an n qubit ancillary 0 state.
+
+424
+
+Fixpoint extended_had (n : pos) : Circ (qubits n, qubits n) :=
+
+425
+
+match n with
+
+426
+
+| 1 ⇒ box (x : qubit) ⇒ x
+
+gate hadamard x; output x
+
+427
+
+| S m ⇒ box ((x, y) : (qubit ⊗ qubits m)) ⇒
+
+428
+
+x
+
+gate hadamard x;
+
+429
+
+y
+
+unbox (extended_had m) y;
+
+430
+
+output (x,y)
+
+431
+
+end.
+
+432
+
+433
+
+Fixpoint extended_zero (n : pos) : Circ (Unit , qubits n) :=
+
+434
+
+match n with
+
+| 1 ⇒ box (_ : Unit ) ⇒ x
+
+gate new0 (); output x
+
+435
+
+| S m ⇒ box (_ : Unit ) ⇒
+
+436
+
+x
+
+gate new0 ();
+
+437
+
+y
+
+unbox extend_zero m;
+
+438
+
+output (x,y)
+
+439
+
+end.
+
+440
+
+441
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+10
+
+442
+
+With these programs written, we can write a function that takes in a size 𝑛, a 2𝑛 by 2𝑛 circuit 443
+
+that we assume is the quantum oracle of some function, and produce the functional entanglement 444
+
+circuit.
+
+445
+
+Definition functional_entanglement (n : pos) 446
+
+(Qf : Circ(qubits (2 * n), qubits (2 * n) )) : Circ (Unit , qubits (2 * n) ) :=
+
+447
+
+box (_ : Unit ) ⇒
+
+448
+
+x
+
+unbox extended_zero n;
+
+y
+
+unbox extended_zero n;
+
+449
+
+unbox Qf (x,y).
+
+450
+
+451
+
+This program precisely matches the circuit description. It is important to note that while this 452
+
+section is written mostly in Coq syntax for the host language, actually using Coq’s dependent types 453
+
+for this purpose would be more complicated than it appears here.
+
+454
+
+2.5
+
+Qwire Operational Semantics
+
+455
+
+456
+
+Qwire has an operational semantics based on the operational semantics for the host language.
+
+457
+
+Given the relations →
+
+, which is a small step semantics for host terms, and → , which is a small
+
+𝐻
+
+𝑏
+
+458
+
+step semantics for boxed circuits, we can define ⇒, the small step semantics for circuits. [LS: here I 459
+
+can point a pointer to a figure that just includes all of the rules]
+
+460
+
+Let us assume that →
+
+satisfies progress, preservation and strong normalization. Then we can
+
+𝐻
+
+461
+
+prove the corresponding properties of Qwire. In these theorem statements, the variable 𝒬 ranges 462
+
+over wire contexts where every variable either has type qubit or bit. An open circuit 𝐶 , where 463
+
+·; 𝒬 ⊢ 𝐶 : 𝑊 , is normal if it consists only of output statements, gate applications, and dynamic lift 464
+
+statements. As the name normal suggests, such circuits cannot reduce any further.
+
+465
+
+Theorem 2.1 (Preservation).
+
+466
+
+(1) If · ⊢
+
+′
+
+′
+
+𝑡 : 𝜏 and 𝑡 → 𝑡 , then · ⊢ 𝑡
+
+: 𝜏 .
+
+467
+
+(2) If ·
+
+′
+
+′
+
+; 𝒬 ⊢ 𝐶 : 𝑊 and 𝐶 ⇒ 𝐶 then ·; 𝒬 ⊢ 𝐶 : 𝑊 .
+
+468
+
+469
+
+Theorem 2.2 (Progress).
+
+470
+
+(1) If · ⊢
+
+′
+
+′
+
+𝑡 : 𝜏 , then either there exists some term 𝑡 such that 𝑡 → 𝑡 , or 𝑡 is a value.
+
+471
+
+(2) If ·
+
+′
+
+′
+
+; 𝒬 ⊢ 𝐶 : 𝑊 then either 𝐶 is normal or there exists some term 𝐶 such that 𝐶 ⇒ 𝐶 .
+
+472
+
+473
+
+Theorem 2.3 (Strong Normalization).
+
+474
+
+(1) If · ⊢ 𝑡 : 𝜏 then there exists some value 𝑣 such that 𝑡 →∗ 𝑣.
+
+475
+
+(2) If ·; 𝒬 ⊢ 𝐶 : 𝑊 then there exists some normal circuit 𝑁 such that 𝐶 ⇒∗ 𝑁 .
+
+476
+
+2.6
+
+Qwire Denotational Semantics
+
+477
+
+478
+
+While progress, preservation, and strong normalization are all very useful properties for programming 479
+
+languages, they don’t directly relate to some of the core issues of quantum programming. In particular, 480
+
+these theorems do not neccessarily imply that inhabitants of circuit types are implementable even by 481
+
+idealized quantum computers. We could have relaxed the constraints of the linear types, and ended 482
+
+up with a language that could have been useful for reasoning about classical circuits that has those 483
+
+properties as well.
+
+484
+
+Qwire also comes with a denotational semantics. This denotational semantics assigns every well 485
+
+typed circuit from 𝑊 to 𝑊 to a linear transformation from the first vector space to the next. [LS: bad 1
+
+2
+
+486
+
+sentence]
+
+487
+
+2.7
+
+Qwire Formal Guarantees
+
+488
+
+489
+
+490
+
+, Vol. 1, No. 1, Article . Publication date: March 2022.
+
+
+
+
+

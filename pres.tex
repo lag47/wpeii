@@ -1,0 +1,26 @@
+\section{presentation diagrams}
+hi\\
+%\begin{quantikz}
+%  \lstick{$\icol{a \\ b}$}& \qw & \qw &\meter{}
+%\end{quantikz}
+
+%\begin{quantikz}
+%  \lstick{$\ket{0}$}& \qw & \gate{H} & \qw \rstick{$\icol{1 / \sqrt{2} \\ 1 / \sqrt{2}}$}\\
+%  \lstick{$\ket{1}$}& \qw & \gate{H} & \qw \rstick{$\icol{ -1 / \sqrt{2} \\ 1 / \sqrt{2}}$}
+%\end{quantikz}
+
+%\begin{quantikz}
+%  \lstick{$\ket{\varphi}$}& \gate{H} & \ctrl{1} & \qw \\
+%  \lstick{$\ket{\psi}$}& \qw & \targ & \qw & \qw
+%\end{quantikz}
+
+\begin{quantikz}
+\lstick{$\ket{\varphi}$}& \gate[wires=2]{U}  & \qw \rstick[wires=2]{$\ket{\phi}$}\\
+  \lstick{$\ket{\psi}$}& \qw &  \qw
+\end{quantikz}
+
+%\begin{quantikz}
+%  \lstick{$\ket{0}$}& \gate{H} & \ctrl{1} & \qw \rstick[wires=2]{$\frac{\ket{00} + \ket{11}}{\sqrt{2}}$} \\
+%  \lstick{$\ket{0}$}& \qw & \targ & \qw & \qw
+%\end{quantikz}
+%\input{circs/function_entang.tex}
