@@ -1,28 +1,59 @@
+\begin{figure}[t]
+    \begin{syntax}
+        \category[Types]{\tau_1,\tau_2,...,\tau_n}
+            \alternative{\text{qubit}}
+            \alternative{\text{bool}}
+            \alternative{\tau_1 \lolli \tau_2}
+            \alternative{\tau_1 \otimes \tau_2}\\
+            \alternative{\text{list}~\tau}
+            \alternative{!\tau}
+            
+        \abstractCategory[Variables]{x,y,z,f}
+        \abstractCategory[Gates]{g_1,g_2,...,g_n}
+        \category[Constants]{c_1,c_2,...,c_n}
+            \alternative{g}
+            \alternative{\text{meas}}
+            \alternative{\text{new}}
+        \category[Terms]{e_1,e_2,...,e_n}
+            \alternative{x}
+            \alternative{c}
+            \alternative{e_1~e_2}
+            \alternative{\lambda~x:\tau.~e}
+            \alternative{\qrec{f}{x}{e_1}{e_2}}\\
+            \alternative{\text{nil}}
+            \alternative{\text{Cons}(e_1,e_2)}\\
+            \alternative{\qif{e_1}{e_2}{e_3}}\\
+            \alternative{\qmatch{e_1}{e_1}{x}{y}{e_2}}\\
+            \alternative{\qlet{x}{y}{e_1}{e_2}}\\
+    \end{syntax}
+\caption{Quantum Lambda Calculus Syntax}
+\label{fig:qcalc_syntax}
+\end{figure}
 \subsection{Introduction to Quantum Lambda Calculus}
 For the most part, the Quantum Lambda Calculus acts just like a linearly typed lambda calculus.
-We will discuss more the the specifics of that in Section~\todo{reference section}, but for now, what is important to know is that linear types allow static analysis of resource consumption, inlcuding usage of qubits.
+Linear types allow static analysis of resource consumption, inlcuding usage of qubits.
+
 The Quantum Lambda Calculus contains the basic syntax structures that you would expect in a simply typed lambda calculus.
-
-\todo{create the figure here}
-
 In addition to these standard constructs, the Quantum Lambda Calculus has several specific constructs.
 \begin{itemize}
 \item The \inlinecoq{new} keyword prepares a new qubit starting in either the state $\ket{0}$ or $\ket{1}$.
-\item The \inlinecoq{meas} keyword measures a qubit, consumes it, and produces a boolean.
-\item The application of one of a preset collection of quantum gates \inlinecoq{U} like the hadamard gate \inlinecoq{H}.
+\item The \inlinecoq{meas} keyword measures a qubit, and produces a boolean.
+\item The application of one of a preset collection of quantum gates like the \inlinecoq{hadamard} gate.
 \end{itemize}
-
+The full grammar for the Quantum Lambda Calculus is included in Figure~\ref{fig:qcalc_syntax}.
 For types, we have a standard collection of linear types.
-\todo{create figure}
+
+
+
 Note that the $\multimap$ operator indicates a linear function type and the $!$, pronounced bang, operator indicates that the value is resuseable.
 The Quantum Lambda Calculus also provides a \inlinecoq{qubit} type.
 Quantum circuits are given types of linear functions over qubits.
 
 \begin{lstlisting}[style=customcoq]
-let entangle : qubit <@ $\otimes$ @> qubit :=
+let entangle : qubit<@ $\otimes$ @>qubit :=
     let x := new 0 in
     let y := new 0 in
-    let x := H x in
+    let x := hadamard x in
     CNOT (x, y)
 \end{lstlisting}
 
@@ -30,7 +61,7 @@ The Quantum Lambda Calculus allows programmers to freely mix gate applications a
 We can demonstrate this in the below program which takes two single qubit function nad two qubits as arguments, and decides which function to actually apply based on the measurement of the first qubit.
 \begin{lstlisting}[style=customcoq]
 let controlled : !(qubit <@$\multimap$@> qubit) <@$\multimap$@> !(qubit <@$\multimap$@> qubit) <@$\multimap$@> qubit <@$\multimap$@> qubit <@$\multimap$@> qubit :=
-    <@$\lambda$@> g1 g2 x y <@$\Rightarrow$@>
+    <@$\lambda$@> g1 g2 x y.
         let b : bool := meas x in
         if b then g1 y else g2 y
 \end{lstlisting}
@@ -55,9 +86,9 @@ First, we will see how subtyping works with the interaction of qubits and $!$ ty
 The arithmetic condition in this rule just enforces that if the left type is not resusable, then the right type must also not be reusable.
 Each subtyping rule has that condition.
 For example, this inference rule lets us infer that $!qubit<:qubit$.
-This makes sense, as a resusable qubit should be able to be used in any context that requires a qubit.
-However, you \textbf{cannot} prove $qubit <: !qubit$.
-This makes sense, as a context which requires a reusable qubit might use it twice, something that is not valid to do for a nonreusable qubit. 
+This is desirable, as a resusable qubit should be able to be used in any context that requires a qubit.
+However, you \textit{cannot} prove $qubit <: !qubit$.
+This is also desirable, as a context which requires a reusable qubit might use it twice, something that is not valid to do for a nonreusable qubit. 
 The rule for products and sums has a similar condition, and is otherwise covariant in its arguments.
 \todo{maybe boolean or something would be a better choice for this example, !qubit should not be an inhabitable type unless you have some weird constants}
 \begin{mathpar}

@@ -40,6 +40,9 @@
 \usepackage{leftidx}
 \usepackage{ulem}
 \usepackage{relsize}
+%code borrowed from Andrew Hirsch
+\usepackage{pl-syntax/pl-syntax}
+
 
 \let\Bbbk\relax % Apparently amssymb defines \Bbbk and so does newtxmath, which acmart requires.
 \usepackage{amsmath,amssymb,amsthm}
@@ -159,4 +162,8 @@ A researcher with a strong background in programming languages theory and is fam
 \else
 \input{pres.tex}
 \fi
+
+
+\bibliography{ref}
+
 \end{document}

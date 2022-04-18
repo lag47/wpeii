@@ -22,7 +22,7 @@ Classical computations are performed by the host language and quantum computatio
 The host language can only pass along boxed circuits as values and not qubits.
 Static and dynamic lifting correspond directly to the \inlinecoq{run} and \inlinecoq{lift} keywords directly, making it clear when an actual quantum computer would need to incur the costs and dynamic lifting and when it would not need to.
 
-In \todo{cite}, Rand and Paykin contributed a verified compiler from Qwire's circuit language to QASM \todo{cite} a popular low level quantum language that can be run directly on some modern quantum computers \todo{check that and edit accordingly}.
+In \citet{qwirepractice}, Rand and Paykin contributed a verified compiler from Qwire's circuit language to QASM~\cite{qasm}, a popular low level quantum language that can be run directly on some modern quantum computers \todo{check that and edit accordingly}.
 This demonstrates that Qwire is not only a useful abstraction for thinking about quantum programming, but can be used as a practical, high level language for quantum computing.
 
 The denotational semantics given to Qwire circuits are closely related to the underlying mathematics of quantum computation, making reasoning about the correctness of Qwire circuits similar to reasoning about the correctness of abstract circuits \todo{confusing terminology}.
@@ -40,16 +40,18 @@ The purely unitary circuits could then be denoted as unitary matrices, making th
 \subsection{Related Work}
 
 There are many more quantum programming languages being used. 
-Much like QWIRE, Quipper\todo{cite} and \liquid \todo{cite} both embed circuit descriptions in a functional language, representing circuits as datastructures in the host language.
+Much like QWIRE, Quipper~\cite{quipper} and \liquid~\cite{liquid} both embed circuit descriptions in a functional language, representing circuits as datastructures in the host language.
 Quipper is embedded in Haskell, and \liquid is embedded in F\#.
-The Qiskit \todo{cite}, Circ, and Q\# languages are all embedded in Python and represent quantump circuits as sequences of imperative operations on qubits.
+The Qiskit~\cite{qiskit}, Cirq~\cite{cirq}, and Q\#~\cite{qsharp} languages are all embedded in Python and represent quantump circuits as sequences of imperative operations on qubits.
 They are the primary quantum programming languages of IBM, Google, and Microsoft respectively
 None of the listed languages use linear types, instead opting either for running static analyses at compile time or throwing exceptions at runtime if a circuit attempts to clone a qubit.
-The QASM language \todo{cites} is a low level circuit description language that seeks to be an intermediate language representation for higher level languages to target.
+The QASM language~\cite{qasm} is a low level circuit description language that seeks to be an intermediate language representation for higher level languages to target.
 
 There are also many applications of programming languages techniques to quantum programming beyond language design.
-In Qwire particularly, there is a body of work on program and program transformation verification \todo{cite}.
+In Qwire particularly, there is a body of work on program and program transformation verification~\cite{qwirepractice}.
 Researchers also use rich type systems to capture complex, quantum specific program properties.
-\todo{cite Twist} designed a type system for keeping track of purity and entanglement, and \todo{cite gottesman types} developed Gottesman types as a way to characterize quantum circuits as transformations between eigenvector bases which also allows you to track entanglement.
+\citet{twist} designed a type system for keeping track of purity and entanglement, and \citet{gottesmanex} developed Gottesman types as a way to characterize quantum circuits as transformations between eigenvector bases which also allows you to track entanglement.
+
+\todo{consider beefing this up a bunch, maybe a full page or two}
 
 %Liquid qasm q# q* qiskit do a forward lit review
