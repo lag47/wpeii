@@ -1,24 +1,21 @@
+Like the Quantum Lambda Calculus, Qwire combines features of a circuit description language and a higher order functional language.
+However, Qwire's syntax and type system maintains a clear distinction between quantum circuits, which directly manipulate qubits, and classical terms which behave like normal higher order functional language terms.
 The Qwire language is parameterized by a host language.
 In this sense, Qwire really describes a family of languages and not a single one.
-However, with only a few assumptions about the host language, namely that it has booleans, product types, and is strongly normalizing \ls{big assumption can’t brush past this easily}, we can give a formal semantics to Qwire.
 
 \subsection{Introduction to Qwire}
 
-Qwire breaks up reasoning about quantum programs into three levels.
-At the top, we have the host language capable of everything that a strongly normalizing functional programming language can do.
-We require that this host level have boolean and pair types, and we extend the host language with a new type of circuits.
-Then we have the circuit layer, which is isolated into a special modality.
-It is only in that modality that we can directly manipulate the final level, wires.
-Much like in our original introduction of quantum programming, circuits are made up of quantum gates and wires.
+
+The QRAM model of quantum computing breaks quantum programs up into two levels, classical computation and quantum circuits.
+Qwire maintains the exact same distinction, with the host language handling classical computation and with special circuit syntax to handle quantum circuits.
+The host language acts like a standard functional programming language, with a special circuit type.
+Qwire allows programmers to create values of the circuit type using the \inlinecoq{box} keyword, under which the programmer can use only the special circuit syntax.
+This circuit syntax lets programmers directly manipulate qubit wires, feeding them into quantum gates or boxes.
 Unlike in the quantum lambda calculus, wires and qubits are not standard terms that can be manipulated anywhere in the language.
-We cannot create functions from qubits to qubits in Qwire.
+In Qwire, programmers cannot create functions from qubits to qubits.
 
 However, a circuit can be parameterized on initial input wires, acting like a function over qubits. 
 With these tools, we can easily define a a circuit that creates the entanglement of the states $\ket{00}$ and $\ket{11}$.
-
-
-\todo{make up some kind of syntax highlighting? }
-\todo{put these next to each other}
 
 \begin{lstlisting}[style=customcoq]
 x <- gate new0 ();
@@ -29,28 +26,39 @@ output o
 \end{lstlisting}
 
 \input{circs/entanglement.tex}\\
-\ls{maybe I need a version of this circuit with different annotations}\\
+\ls{maybe I need a version of this circuit with different annotations}
+
 Inside this circuit, the gate keyword is used to both to create new qubits and apply gates.
 On the first two lines, we introduce new qubits initialized to the $\ket{0}$ state with the \inlinecoq{new0} gate.
 Then we apply the \inlinecoq{hadamard} gate to the \inlinecoq{x} qubit.
 Note that we reuse the variable name \inlinecoq{x} with variable shadowing.
-Because Qwire's linear type system prevents us from using a wire value twice, this is fine\ls{very weaselly worded}.
+We do this to make it obvious which variables correspond to which input wire.
+
 Qwire is parameterized on a collection of base gates. 
 Each gate needs to be given a gate type, which specifies the input and output wires of the gate. 
 The notion of gate here is broader than the notion of gate in the background section. 
 In that section, gates only referred to reversible computations that perform no measurement and preserve superposition information. 
 In Qwire these are called unitary gates, while standard gates include measurment and the initial prepration of classical states. 
-Unitary gates can be inverted or controlled, producing new unitary gates.\ls{previous sentence not great}
+
+Given any unitary gate \inlinecoq{u}, we can construct both the the inverse gate \inlinecoq{u}$^\dagger$ and the controlled gate \inlinecoq{control u}.
+
 \inlinecoq{not} is a unitary gate, so we can construct a controlled version \inlinecoq{not} gate that behaves the same as the CNOT gate in the background section.
 
 \subsection{Circuit Host Language Interactions}
 
 There are two ways to take a circuit like that and embed it into the top level host language.
 The first way is to specify its inputs with and delimit it with the box keyword.
+\begin{lstlisting}[style=customcoq]
+box (x,y) : qubit <@$\otimes$@> qubit
+    x <- gate hadamard x;
+    o <- gate control not (x,y);
+    output o
+\end{lstlisting}
+
 The boxed circuit then becomes a term with a circuit type in the host language.
-The boxed circuit can then be unboxed and used in a circuit.
+Boxed circuits can be unboxed and applied to wires inside a different circuit.
 The second way is to take a circuit with no undefined inputs and running it with the \run keyword.
-Intuitively, running a circuit first yields some quantum state, which is then implicitly measured.
+Running a circuit first yields some quantum state, which is then implicitly measured.
 For example, consider running the code from above.
 \begin{lstlisting}[style=customcoq]
 run
@@ -83,7 +91,7 @@ This gives us access to all of the tools of a full programming language to turn 
 
 
 \begin{figure}
-    \todo{find better way to format this}
+    \todo{use andrews syntax }
 \begin{align*}
 W ::=  \qubit \quad|\quad \bit \quad|\quad W_1 \otimes W_2    \\
 \tau ::= ... \quad | \quad \bool \quad | \quad \tau_1 \times \tau_2 \quad | \quad \qwcirc{W_1}{W_2}

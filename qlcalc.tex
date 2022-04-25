@@ -1,3 +1,5 @@
+\subsection{Introduction to Quantum Lambda Calculus}
+\todo{right now this section has inconsistent metavariables for types, before submission make sure you pick something and stick with it}
 \begin{figure}[t]
     \begin{syntax}
         \category[Types]{\tau_1,\tau_2,...,\tau_n}
@@ -14,24 +16,35 @@
             \alternative{g}
             \alternative{\text{meas}}
             \alternative{\text{new}}
+            \alternative{\text{true}}
+            \alternative{\text{false}}
         \category[Terms]{e_1,e_2,...,e_n}
             \alternative{x}
             \alternative{c}
             \alternative{e_1~e_2}
-            \alternative{\lambda~x:\tau.~e}
+            \alternative{\lambda~x:\tau.~e}\\
+            \alternative{\qif{e_1}{e_2}{e_3}}\\
             \alternative{\qrec{f}{x}{e_1}{e_2}}\\
             \alternative{\text{nil}}
             \alternative{\text{Cons}(e_1,e_2)}\\
-            \alternative{\qif{e_1}{e_2}{e_3}}\\
             \alternative{\qmatch{e_1}{e_1}{x}{y}{e_2}}\\
+            \alternative{(e_1,e_2)}
             \alternative{\qlet{x}{y}{e_1}{e_2}}\\
     \end{syntax}
 \caption{Quantum Lambda Calculus Syntax}
 \label{fig:qcalc_syntax}
 \end{figure}
-\subsection{Introduction to Quantum Lambda Calculus}
-For the most part, the Quantum Lambda Calculus acts just like a linearly typed lambda calculus.
+
+The Quantum Lambda Calculus is a linearly typed lambda calculus with extra constants and types to handle quantum computation. 
 Linear types allow static analysis of resource consumption, inlcuding usage of qubits.
+In the Quantum Lambda Calculus, they prevent us from writing program that violate the quantum no-cloning theorem.
+Any program that violates the quantum no-cloning theorem cannot actually be executed by any quantum computer.
+
+At a high level, the Quantum Lambda Calculus is a cross between a circuit description language and a higher order functional programming language.
+Like in a circuit description language, a Quantum Lambda Calculus programmer needs to be concerned applying gates to sequences of qubits.
+The language does not abstract away these concerns in the way a high level classical language, i.e. Haskell or Java, abstracts away concepts like registers and heap addresses.
+But it does give you the ability to treat quantum circuits as functions, allowing you to write programs that take in quantum circuits as input.
+It also gives you all of the tools of a standard simply typed lambda calculus.
 
 The Quantum Lambda Calculus contains the basic syntax structures that you would expect in a simply typed lambda calculus.
 In addition to these standard constructs, the Quantum Lambda Calculus has several specific constructs.
@@ -44,9 +57,8 @@ The full grammar for the Quantum Lambda Calculus is included in Figure~\ref{fig:
 For types, we have a standard collection of linear types.
 
 
-
-Note that the $\multimap$ operator indicates a linear function type and the $!$, pronounced bang, operator indicates that the value is resuseable.
-The Quantum Lambda Calculus also provides a \inlinecoq{qubit} type.
+The $\multimap$ operator indicates a linear function type and the $!$, pronounced bang, operator indicates that the value is resuseable.
+The Quantum Lambda Calculus also provides a \inlinecoq{qubit} type to represent qubits.
 Quantum circuits are given types of linear functions over qubits.
 
 \begin{lstlisting}[style=customcoq]
@@ -85,16 +97,38 @@ First, we will see how subtyping works with the interaction of qubits and $!$ ty
 \end{align*}
 The arithmetic condition in this rule just enforces that if the left type is not resusable, then the right type must also not be reusable.
 Each subtyping rule has that condition.
-For example, this inference rule lets us infer that $!qubit<:qubit$.
-This is desirable, as a resusable qubit should be able to be used in any context that requires a qubit.
-However, you \textit{cannot} prove $qubit <: !qubit$.
-This is also desirable, as a context which requires a reusable qubit might use it twice, something that is not valid to do for a nonreusable qubit. 
-The rule for products and sums has a similar condition, and is otherwise covariant in its arguments.
-\todo{maybe boolean or something would be a better choice for this example, !qubit should not be an inhabitable type unless you have some weird constants}
+For example, this inference rule lets us infer that given any type $\tau$, $!\tau <:\tau$. 
+%$!(qubitt\lolli \qubitt\otimes\qubitt)<:qubitt\lolli \qubitt\otimes\qubitt$.
+This is desirable, as a reusable value should be able to be used in any context that requires a qubit.
+However, you \textit{cannot} prove $\tau <: !\tau$.
+This is also desirable, as a context which requires a reusable value might use it twice, something that is not valid to do for a nonreusable value.
+
+For a concrete example, consider $\tau$ to be $qubitt\lolli \qubitt\otimes\qubitt$, a function that takes a qubit as input and returns two qubits.
+We will demonstrate two subtly, but importantly, different terms that satisfy this type.
+
+\begin{lstlisting}[style=customcoq]
+    let pair_new : !(qubit <@$\lolli$@> qubit<@$\otimes$@>qubit) :=
+        <@$\lambda$@>x. (x, new 0)
+    let pair_fixed : qubit <@$\lolli$@> qubit<@$\otimes$@>qubit :=
+        let y := new 0 in
+        <@$\lambda$@>x. (x, y)
+\end{lstlisting}
+
+In a pure language, \inlinecoq{pair_new} and \inlinecoq{pair_fixed} would have identical behavior, but \inlinecoq{new} creates a new state.
+When \inlinecoq{pair_new} is applied to some qubit value, a new qubit is created and placed in a tuple with the input value.
+When \inlinecoq{pair_fixed} is first evaluated to a function, a single new qubit is created, and when that function is given an input the two qubits are returned as a tuple.
+Because \inlinecoq{pair_fixed} has one fixed qubit that it will return in the tuple, it is not a reusable function.
+If we could reuse it, we could end up with two references to the same qubit, violating the quantum no-cloning theorem.
+And if we could do that, then the language would be able to represent computations that cannot be achieved even in an idealized quantum quantum computer.
+But \inlinecoq{pair_new} actually can be reused without any problem, and it can in fact be reused.
+So we need to rely on the subtyping system to make sure that we never use functions like \inlinecoq{pair_fixed} where functions like \inlinecoq{pair_new} are needed.
+
+
+The rule for products and lists has a similar condition, and is otherwise covariant in its arguments.
 \begin{mathpar}
     \inferrule*[RIGHT=\otimes]{n = 0 \rightarrow m = 0\\ A_1 <: B_1 \\ A_2 <: B_2}{!^n (A_1 \otimes A_2) <: !^m (B_1 \otimes B_2)}
     \and
-    \inferrule*[RIGHT=\oplus]{n = 0 \rightarrow m = 0\\ A_1 <: B_1 \\ A_2 <: B_2}{!^n (A_1 \oplus A_2) <: !^m (B_1 \otimes B_2)}
+    \inferrule*[RIGHT=\text{list}]{n = 0 \rightarrow m = 0\\ A <: B} {!^n (\text{list}~A) <: !^m (\text{list}~B)}
 \end{mathpar}
 
 Finally, there is a subtyping rule for functions.
@@ -104,7 +138,7 @@ Finally, there is a subtyping rule for functions.
         {!^n(A_1 \multimap A_2) <: !^m (B_1 \multimap B_2)}
 \end{mathpar}
 For readers familiar with subtyping function types, this is a straightforward, contravariant condition.
-For those unfamiliar, recall that the type on the left is the more specific type, and therefore enforces a stronger condition of the code.
+For those unfamiliar, recall that the type on the left is the mo re specific type, and therefore enforces a stronger condition of the code.
 Functions that can relax restrictions on their input or strengthen conditions on their output satisfy a stronger condition than the supertype requires.
 
 This subtyping relation is used in the general type system when we need to type variables or constants.
@@ -120,6 +154,15 @@ The variable typing derivation makes use of this.
 \end{mathpar}
 Note the presence of the $\Omega$ in the conclusion of this rule.
 This shows that we can actually throw away variables without using them.
+
+The simplest rule is the one for language constants, like \inlinecoq{new} or quantum gates.
+\begin{mathpar}
+\inferrule*[Right=CONST]
+{!A_c <: B}
+{\Omega \vdash c : B}
+\end{mathpar}
+Each constant $c$ has a fixed typed $A_c$ and is reusable, so $c$ can be used wherever a supertype of $A_c$, $B$ is needed.
+
 In the rules dealing the the product type, we will see how the type system prevents us from reusing nonreusable variables.
 
 \begin{mathpar}
@@ -140,12 +183,26 @@ With this rule, we can derive the following typing $x : \qubit, y : \qubit \vdas
 We cannot derive $x : \qubit \vdash (x,x) : \qubit \otimes \qubit$, because you cannot separate the context into two disjoint pieces that each have $x$ bound.
 The $\otimes E$ rule maintains a similar distinction, where $\Omega_2$ can be used only in the construction of $e_1$, $\Omega_3$ can be used only in the construction of $e_2$ and $!\Omega_1$ can be used in both.
 
-The function application rule also works similarly.
+The typing rule for \inlinecoq{if} allows the nonreusable values to be shared between the two branches.
+This is allowed because only one of the two branches ever gets executed.
+The formal rule is included below.
+Note that the nonreusable context $\Omega_3$ is used in the typing derivation of both branches.
 \begin{mathpar}
-    \inferrule*[Right=$\otimes I$]
+    \inferrule*[Right=IF]
+        {!\Omega_1,\Omega_2 \vdash e_1 : \text{bool} \\ 
+         !\Omega_1, \Omega_3 \vdash e_2 : \tau \\
+         !\Omega_1, \Omega_3 \vdash e_3 : \tau
+         }
+        {!\Omega_1,\Omega_2,\Omega_3 \vdash \qif{e_1}{e_2}{e_3}:\tau}
+\end{mathpar}
+
+The function application rule works similarly to the $\otimes E$ rule.
+\begin{mathpar}
+    \inferrule*[Right=$\lolli I$]
         {!\Omega_1, \Omega_2 \vdash e_1 : A \multimap B \\ !\Omega_1, \Omega_3 \vdash e_2 : A}
         {!\Omega_1, \Omega_2, \Omega_3 \vdash e_1\;e_2 : B}
 \end{mathpar}
+
 The construction of functions is slightly more complicated.
 The type system needs to make sure that reusable functions don't capture nonreusable variables.
 As such, the rule for nonreusable functions is very simple.
@@ -160,8 +217,17 @@ For reusable functions, we add an extra condition that no nonreusable variables 
         {!\Omega_1, \Omega_2, x : A \vdash e : B \\ FV(e) \cap |\Omega_2| = \emptyset}
         {!\Omega_1, \Omega_2 \vdash \lambda x : A. e : !^n(A \multimap B)}
 \end{mathpar}
-\todo{introduce the list type constructor}
-\todo{a bit more transition here}
+
+All recursive functions are required to be reusable, which makes sense as the function needs to be able to be used arbitrarily many times in recursive calls.\todo{maybe there is a bit more going on here}
+This is formalized in the below typing rule.
+
+\begin{mathpar}
+    \inferrule*[Right=REC]
+    {!\Omega_1,f:!(\tau_1\lolli \tau_2), x : \tau_1 \vdash e_1 : \tau_2 \\
+    !\Omega_1,\Omega_2,f : !(\tau_1\lolli \tau_2) \vdash e_2 : \tau_2
+    }
+    {!\Omega_1, \Omega_2 \vdash \qrec{f}{x}{e_1}{e_2} : \tau_2}
+\end{mathpar}
 
 \subsection{Running example}
 To implement the functional entanglement in full generality, we need to use lists of qubits to represent the $n$ qubit input and output wires.
@@ -171,32 +237,36 @@ To stay within the types formalized in the Quantum Lambda Calculus paper, we rep
 type qlist := list qubit
 
 let rec extended_had (l : qlist) : qlist :=
-    match unfold x with
-    | inl _ => Cons (hadamard x, nil)
-    | inr (x,l') => Cons (hadamard x, extended_had l)
+    match l with
+    | nil => Cons (hadamard x, nil)
+    | Cons (x,l') => Cons (hadamard x, extended_had l')
     end
 
-let rec extended_zero (list unit) : list qubit :=
-    match unfold x with
-    | inl _ => Cons (hadamard x, nil)
-    | inr (_,l') => Cons (new 0, extended_zero l')
+let rec extended_zero (x : list unit) : list qubit :=
+    match x with
+    | nil => Cons (new 0, nil)
+    | Cons (_,y) => Cons (new 0, extended_zero y)
     end
 \end{lstlisting}
 
-Given the  above functions, we create a functional entanglement state given a number $n$ encoded as a list of units, and a quantum oracle represented as a function that takes and returns pairs of lists of qubits.
+Given the above functions, we create a functional entanglement state.
+As inputs, we need number \inlinecoq{n}, encoded as a list of units, and a quantum oracle \inlinecoq{Qf}, represented as a function from two lists of qubits to two lists of qubits.
+The first list represents the upper \inlinecoq{n} qubits, and the second list represents the lower \inlinecoq{n}.
 \begin{lstlisting}[style=customcoq]
-let functional_entanglement (n : list unit) (Qf : qlist<@$\otimes$@>qlist <@$\multimap$@> qlist<@$\otimes$@> qlist) : qlist <@$\otimes$@> qlist :=
+let functional_entanglement (n : list unit) (Qf : qlist <@$\otimes$@> qlist <@$\multimap$@> qlist <@$\otimes$@> qlist) : qlist <@$\otimes$@> qlist :=
     let x = extended_zero n in
     let y = extended_zero n in 
     let x = extended_had x in
     Qf (x,y)
 \end{lstlisting}
 While the above function does allow us to create a functional entanglement state, the type system has no way of ensuring that \inlinecoq{Qf} actually is written to take in two $n$ length lists of qubits.
-Alternatively, we could have chosen to represent multi-qubit wires as tuples of qubits, but this would have forced us to write a different functional entanglement function for each size.
+Alternatively, we could have chosen to represent \inlinecoq{n}-qubit wires as \inlinecoq{n}-tuples of qubits, but this would have forced us to write a different functional entanglement function for each size.
 However, most practical languages lack support for dependent types and programmers are used to dealing with bugs that come from unmet size expectactions.
 
 
-\subsection{Quantum Lambda Calculus Type Operational Semantics}
+\subsection{Quantum Lambda Calculus Operational Semantics}
+So far, we have only given intuitive explanations of how Quantum Lambda Calculus programs execute.
+In this section, we introduce the formal operational semantics of the Quantum Lambda Calculus, in order to discuss the formal guarantees that it provides.
 
 When not dealing directly with quantum computation primitives, the Quantum Lambda Calculus behaves just like any other lambda calculus.
 It has a step relation that behaves as you would expect when it comes to operations like function application.

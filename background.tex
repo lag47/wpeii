@@ -1,3 +1,4 @@
+\todo{do a pass on this section to reflect new lessened scope}
 \subsection{Qubits and Quantum State Systems}
 The most basic unit of data in quantum computing is called the qubit.
 As the name suggests, a qubit is a quantum computing generalization of the classical bit.
@@ -191,6 +192,20 @@ This can even happen in a loop, with a classical computer repeatedly designing a
 The QRAM model is an abstraction for quantum computing that maintains a distinction between a quantum computer, which can realize a specification for a quantum circuit and then execute it, and a classical computer, which can perform all of the normal functions of a computer, including writing specifications for quantum circuits.\ls{That programs can write other programs should be a familiar idea for PL people}
 Each language discussed in this paper realizes this model of computation in some way.
 
+\subsection{Static and Dynamic Lifting}
+
+In some quantum algorithms, we do not want to measure an entire quantum state at once.
+We only want to measure some of its qubits, leaving others in some superposition.
+We then need to use the measured values to compute another circuit to apply to the residual quantum states.
+In fact, we may need to do this several times in sequence.
+This basic pattern, called \emph{dynamic lifting} is essential in quantum algorithms like \todo{find short list definitely includes quantum error correction}.
+
+Supporting dynamic lifting requires quantum computers to keep quantum states from decaying for the entire time that a classical computer is running a possibly expensive computation. 
+This is an essential capability, but it is far too expensive to do when we do not need too.
+Many quantum algorithms that only measure some of the output of a circuit do not rely on the rest of the output at all, and work just as well if it is discarded immediately after the important outputs are measured.
+This basic pattern, called \emph{static lifting}, is sufficient for many quantum algorithms and is much cheaper.
+\todo{I think I need more transition here} 
+
 \subsection{Running Example: Functional Entanglement}
 Consider a fixed positive number $n$, along with a fixed quantum oracle $Q_f$ where $f : 2 ^ n \rightarrow 2 ^ n$. We can construct the below $2n$ qubit quantum circuit whose inputs are fixed to be the classical state \ket{0} scaled up to $n$ qubits.
 
@@ -237,7 +252,7 @@ U(\ket{\phi}\otimes\ket{0^n}) &=\\
 2(\frac{1}{2}\ket{\phi} \otimes \frac{1}{2}\ket{\phi}) &=\\
 \frac{1}{2} \ket{\phi} \otimes \ket{\phi} &\neq \ket{\phi} \otimes \ket{\phi}
 \end{align*}
-\subsection{Static and Dynamic Lifting}
+
 
 \subsection{Density Matrix Representation}%maybe this belongs in section
 One reason that quantum computing is difficult is that it mixes classical probability with quantum state systems.
