@@ -1,7 +1,7 @@
 Like the Quantum Lambda Calculus, Qwire combines features of a circuit description language and a higher order functional language.
-However, Qwire's syntax and type system maintains a clear distinction between quantum circuits, which directly manipulate qubits, and classical terms which behave like normal higher order functional language terms.
+Unlike the Quantum Lambda Calculus, Qwire's syntax and type system maintains a clear distinction between quantum circuits, which directly manipulate qubits, and classical terms which behave like normal higher order functional language terms.
 The Qwire language is parameterized by a host language.
-In this sense, Qwire really describes a family of languages and not a single one.
+In this sense, Qwire describes a family of languages and not a single one.
 
 \subsection{Introduction to Qwire}
 
@@ -11,11 +11,14 @@ Qwire maintains the exact same distinction, with the host language handling clas
 The host language acts like a standard functional programming language, with a special circuit type.
 Qwire allows programmers to create values of the circuit type using the \inlinecoq{box} keyword, under which the programmer can use only the special circuit syntax.
 This circuit syntax lets programmers directly manipulate qubit wires, feeding them into quantum gates or boxes.
-Unlike in the quantum lambda calculus, wires and qubits are not standard terms that can be manipulated anywhere in the language.
-In Qwire, programmers cannot create functions from qubits to qubits.
+Wires and qubits are not standard terms that can be manipulated anywhere in Qwire.
+This means programmers cannot create host level functions from qubits to qubits in Qwire.
 
-However, a circuit can be parameterized on initial input wires, acting like a function over qubits. 
-With these tools, we can easily define a a circuit that creates the entanglement of the states $\ket{00}$ and $\ket{11}$.
+However, programmers can create circuits that are parameterized over input wires acting.
+Inhabitants of the type \inlinecoq{Circ(W1,W2)} are like functions from \inlinecoq{W1} to \inlinecoq{W2}, but Qwire's syntax and type system don't allow such types to be used interchangeable.
+This helps to maintain Qwire's strict distinction between classical computation and quantum circuits.
+
+With Qwire, we can easily define a closed circuit that creates the entanglement of the states $\ket{00}$ and $\ket{11}$, just as we did in Section~\ref{sec:entangle}.
 
 \begin{lstlisting}[style=customcoq]
 x <- gate new0 ();
@@ -28,7 +31,7 @@ output o
 \input{circs/entanglement.tex}\\
 \ls{maybe I need a version of this circuit with different annotations}
 
-Inside this circuit, the gate keyword is used to both to create new qubits and apply gates.
+This circuit code uses the \inlinecoq{gate} keyword to both create new qubits and apply quantum gates.
 On the first two lines, we introduce new qubits initialized to the $\ket{0}$ state with the \inlinecoq{new0} gate.
 Then we apply the \inlinecoq{hadamard} gate to the \inlinecoq{x} qubit.
 Note that we reuse the variable name \inlinecoq{x} with variable shadowing.
@@ -36,18 +39,20 @@ We do this to make it obvious which variables correspond to which input wire.
 
 Qwire is parameterized on a collection of base gates. 
 Each gate needs to be given a gate type, which specifies the input and output wires of the gate. 
-The notion of gate here is broader than the notion of gate in the background section. 
+The notion of gate here is broader than the notion of gate in Section~\ref{sec:background}. 
 In that section, gates only referred to reversible computations that perform no measurement and preserve superposition information. 
-In Qwire these are called unitary gates, while standard gates include measurment and the initial prepration of classical states. 
+In Qwire these are called unitary gates, while the umbrella term, gate, include measurment and the initial preparation of classical states. 
 
 Given any unitary gate \inlinecoq{u}, we can construct both the the inverse gate \inlinecoq{u}$^\dagger$ and the controlled gate \inlinecoq{control u}.
-
-\inlinecoq{not} is a unitary gate, so we can construct a controlled version \inlinecoq{not} gate that behaves the same as the CNOT gate in the background section.
+One such unitary gate is \inlinecoq{not}, so we can construct a controlled version \inlinecoq{not} gate that behaves the same as the CNOT gate in the background section.
+Another unitary gate is \inlinecoq{hadamard}.
+Given an arbitrary unitary gate \inlinecoq{g}, \inlinecoq{g}$^\dagger$ is the inverse of \inlinecoq{g}, and \inlinecoq{control g} takes a control qubit and a target wire acting as the identity when the control is $\ket{0}$ and acting as \inlinecoq{g} when the control is $\ket{1}$.
+Recall from Section~\ref{sec:gates_circs} that this description is sufficient to describe its behavior on arbitrary quantum states.
 
 \subsection{Circuit Host Language Interactions}
 
-There are two ways to take a circuit like that and embed it into the top level host language.
-The first way is to specify its inputs with and delimit it with the box keyword.
+There are two ways to embed a circuit into the top level host language.
+The first way is to specify its inputs with the \inlinecoq{box} keyword.
 \begin{lstlisting}[style=customcoq]
 box (x,y) : qubit <@$\otimes$@> qubit
     x <- gate hadamard x;
@@ -55,9 +60,11 @@ box (x,y) : qubit <@$\otimes$@> qubit
     output o
 \end{lstlisting}
 
-The boxed circuit then becomes a term with a circuit type in the host language.
-Boxed circuits can be unboxed and applied to wires inside a different circuit.
-The second way is to take a circuit with no undefined inputs and running it with the \run keyword.
+The boxed circuit is a term with a circuit type in the host language.
+In the above case, the circuit has type Circ($\qubitt\otimes\qubitt,\qubitt\otimes\qubitt$).
+Boxed circuits can be \emph{unboxed }and applied to wires inside a different circuit.
+
+The second way to embed circuits into the host language is to take a circuit with no undefined inputs and \emph{running} it with the \run~keyword.
 Running a circuit first yields some quantum state, which is then implicitly measured.
 For example, consider running the code from above.
 \begin{lstlisting}[style=customcoq]
@@ -68,12 +75,12 @@ run
     o <- gate control not (x,y);
     output o
 \end{lstlisting}
-This program would produce the state $\frac{1}{\sqrt{2}}(\ket{00} + \ket{11})$, and then measure both wires.
+This program would produce the state $\frac{1}{\sqrt{2}}(\ket{00} + \ket{11})$, an equal superposition, and then measure both wires.
 This has an equal likelihood of producing the pair \inlinecoq{(true,true)} and the pair \inlinecoq{(false,false)}.
-Note that this means that you cannot preserve any part of the quantum system when finished running a circuit.
 
-Only having static lifting is too restrictive for some quantum algorithms\todo{at least have a citation, ideally a bit more of an explanation}.
-Sometimes, algorithms require certain wires to be measured while the rest of the state is preserved, and then determine what transformations to make to the remaining state from state based on the measured values.
+Recall the distinction between static and dynamic lifting from Section~\ref{sec:lifting}.
+The \run~keyword works as a form of static lifting, forcing the entire quantum state to in a circuit to be measured even if we are only interested in a partial output.
+For some algorithms, we need dynamic lifting as well, to keep the residual state in superposition while another circuit is chosen based on the measured states.
 Qwire enables this with the \inlinecoq{lift} keyword.
 
 Consider the following example program with input wires \inlinecoq{x} and \inlinecoq{y}.
@@ -83,23 +90,100 @@ Consider the following example program with input wires \inlinecoq{x} and \inlin
     output y
 \end{lstlisting}
 This circuit observes the state in \inlinecoq{x} and uses that value to decide which circuit to apply to \inlinecoq{y}.
-This operation is very different from previous ones that we have seen in Qwire.
+This is a form of dynamic lifting.
 At first, this might appear similar to the \inlinecoq{control} gate.
 However, \inlinecoq{control} only works on unitary gates, where the above program can work with arbitrary circuits.
-The extra power comes from the fact that the \inlinecoq{lift} keyword creates a host language boolean value, not a circuit level wire.
+\todo{need to make this clearer}
+The key difference is that \inlinecoq{lift} keyword produce \emph{host language} boolean values, not a circuit level wires, allowing the host language to perform arbitrary classical computation when deciding what circuit to apply to the residual state.
 This gives us access to all of the tools of a full programming language to turn this measured value into a circuit.
 
 
 \begin{figure}
-    \todo{use andrews syntax }
-\begin{align*}
-W ::=  \qubit \quad|\quad \bit \quad|\quad W_1 \otimes W_2    \\
-\tau ::= ... \quad | \quad \bool \quad | \quad \tau_1 \times \tau_2 \quad | \quad \qwcirc{W_1}{W_2}
-\end{align*}
+\begin{syntax}
+\category[Wire Types]{W_1,...,W_n}
+    \alternative{\text{qubit}}
+    \alternative{\text{bit}}
+    \alternative{W_1\otimes W_2}
+\category[Host Types]{\tau_1,...,\tau_n}
+    \alternative{...}
+    \alternative{\text{bool}}
+    \alternative{\tau_1\times\tau_2}
+    \alternative{\text{Circ}(W_1,W_2)}
+\abstractCategory[Variables]{x,y,z}
+\abstractCategory[Base Gates]{bg}
+\category[Gates]{g_1,...,g_n}
+    \alternative{bg}
+    \alternative{bg^\dagger}
+    \alternative{\text{control }bg}
+\category[Wire Pattern]{w_1,...,w_n}
+    \alternative{x}
+    \alternative{w_1,w_2}
+\category[Circuits]{C_1,...,C_n}
+    \alternative{\text{output }x}\\
+    \alternative{w_2 \leftarrow \text{gate}~g~w_1;~C}\\
+    \alternative{\text{unbox}~C~w}\\
+    \alternative{w\leftarrow C_1;~C_2}\\
+    \alternative{x\Leftarrow\text{lift}~w;~C}
+\category[Terms]{e_1,...,e_n}
+    \alternative{...}
+    \alternative{\text{box}~(w : W)\Rightarrow C}
+    \alternative{\text{run}~C}
+\end{syntax}
+\caption{Qwire Grammar}
+\label{fig:qwiregrammar}
 \end{figure}
 
 \subsection{Qwire Type System}
-Qwire uses a mixture of linear and non-linear types in order to prevent violations of quantum circuit rules with minimal extra burden placed on programmers.
+\begin{figure}[t]
+    \begin{syntax}
+        \category[Wire Context]{\Omega_1, ...,\Omega_n}
+            \alternative{\cdot}
+            \alternative{\Omega,w : W}
+        \category[Host Context]{\Gamma_1, ..., \Gamma_n}
+            \alternative{\cdot}
+            \alternative{\Gamma, x : \tau}
+    \end{syntax}
+    \label{qwire_type_cont}
+    \caption{Qwire Typing Contexts}
+\end{figure}
+
+\begin{figure}[t]
+    \rulefiguresize
+    \begin{mathpar}
+        \inferrule* [Right=Output]
+            {\Omega \Rightarrow w : W }
+            { \Gamma;\Omega \vdash \text{output}~w }
+        \and
+        \inferrule* [Right=Gate]
+            {\Omega_1 \Rightarrow w_1 : W_1 \and g \in \text{gate}(W_1,W_2) \and \Gamma; w_2 : W_2, \Omega_2 \vdash C : W}
+            {\Gamma;\Omega_1, \Omega_2\vdash w_2 \leftarrow \text{gate}~ g ~w_1;~ C : W }  
+        \and
+        \inferrule*[Right=Unbox]
+            {\Omega \Rightarrow w : W_1 \and \Gamma \vdash e : \text{Circ}(W_1,W_2)}
+            {\Gamma;\Omega\vdash \text{unbox}~ e~ w : W_2 }  
+        \and
+        \inferrule*[Right=Compose]
+            {\Gamma; \Omega_1 \vdash C_1 : W_1\and \Omega \Rightarrow w : W \and \Gamma;\Omega,\Omega_2 \vdash C_2 : W_2}
+            {\Gamma; \Omega_1, \Omega_2 \vdash w \leftarrow C_1;~ C_2 : W_2}
+        \and
+        \inferrule*[Right=Lift]
+            {\Omega_1 \Rightarrow w : W_1 \and \Gamma, x : |W_1|; \Omega_2 \vdash C : W_2}
+            {\Gamma;\Omega_1, \Omega_2 \vdash x \Leftarrow \text{lift}~w;~ C : W_2}
+        \and
+        \inferrule*[Right=BOX]
+            {\Omega \Rightarrow p : W_1 \and \Gamma; \Omega \vdash C : W_2}
+            {\Gamma \vdash \text{box}~(p: W_1) \Rightarrow C : \text{Circ}(W_1, W_2)}
+        \and
+        \inferrule*[RIGHT=RUN]
+            {\Gamma; \cdot \vdash C : W}
+            {\Gamma \vdash \text{run}~ C : |W|}
+
+    \end{mathpar}
+        \caption{Typing derivation rules for Qwire circuits and host level terms}
+        \label{fig:circuit_typ_der}
+    \end{figure}
+
+Qwire uses a mixture of linear and non-linear types in order to prevent violations of the quantum no-cloning theorem while avoiding the cognitive burden of linear types when possible\ls{this sentence could use some work}.
 Linear types are used to prevent reuse of wire values inside of circuits.
 Non-linear types are used everywhere else in the host language\ls{bad parallelism}.
 To maintain this distinction, Qwire has three different typing derivations.
@@ -120,32 +204,64 @@ At the next level is the circuit typing derivation which has the below shape.
 
 $\Omega$, once again, refers to the linear context of wire variables.
 $\Gamma$ refers to the nonlinear context of host language variables.
-So while $\Omega$ contains exclusively tensor products of bits and qubits, $\Gamma$ can contain natural numbers, functions, and circuits.
-And while variables in $\Omega$ must all be used exactly once, variables in $\Gamma$ can be used arbitrarily many times or even not at all.
+So while $\Omega$ contains exclusively tensor products of bits and qubits, $\Gamma$ can contain data structures like natural numbers, functions, and circuits.
+And while variables in $\Omega$ must all be used exactly once, variables in $\Gamma$ can be used arbitrarily many times.
+In the rest of this section, we will introduce and explain each typing rule for Qwire.
+All of the typing rules are collected in Figure~\ref{fig:circuit_typ_der}.
 
 \todo{it might be better to inline the typing rules here}
 
-All of the circuit typing rules are presented in Figure~\ref{fig:circuit_typ_der}
 The OUTPUT rule provides a way to terminate a circuit with some collection of wires.
-Note that this rule provides no direct way have values bound in $\Gamma$ influence $p$. \ls{how useful is this observation?}
+Note that this rule provides no direct way have values bound in $\Gamma$ influence $p$.
+
+\begin{mathpar}
+\inferrule* [Right=Output]
+    {\Omega \Rightarrow w : W }
+    { \Gamma;\Omega \vdash \text{output}~w }
+\end{mathpar}
 
 The GATE rule ensures that inputs consumed by a gate cannot be used in the resulting circuit, unless of course the gate leaves those wires unchanged.
 It accomplishes this by having the typing assumption for the continuation $C$ replace the context with the single pattern output by the gate.
 So none of the inputs to the gate are in scope when typing the continuation.
+
+\begin{mathpar}
+\inferrule* [Right=Gate]
+    {\Omega_1 \Rightarrow w_1 : W_1 \and g \in \text{gate}(W_1,W_2) \and \Gamma; w_2 : W_2, \Omega_2 \vdash C : W}
+    {\Gamma;\Omega_1, \Omega_2\vdash w_2 \leftarrow \text{gate}~ g ~w_1;~ C : W }  
+
+\end{mathpar}
 
 The UNBOX rule proves one way to have the host context $\Gamma$ influence a circuit.
 The UNBOX rule requires a circuit $\coqfont{c}$ to be typed in the host typing derivation.
 Unlike wire values, this circuit could come as the input of some host level function or be the direct result of some complex host level computation.
 It also requires and consumes an input pattern, preventing wire variables from being forgotten or reused.
 
+\begin{mathpar}
+\inferrule*[Right=Unbox]
+    {\Omega \Rightarrow w : W_1 \and \Gamma \vdash e : \text{Circ}(W_1,W_2)}
+    {\Gamma;\Omega\vdash \text{unbox}~ e~ w : W_2 }  
+
+\end{mathpar}
+
 The LIFT rule provides another, more subtle, way for $\Gamma$ to influence a circuit.
 As previously mentioned the \coqfont{lift} keyword is used for dynamic lifting. \ls{not sure the reader remembers what that is}
 Note that unlike the GATE rule, the LIFT rule binds a variable by adding it to the host context $\Gamma$.
 It uses the \coqfont{|$\cdot$|} function to map wire types onto products of booleans.
 This allows us to use host language control flow operators on this value, selecting between one of many different circuits to apply to the remaining quantum wires in $\Omega_2$.
+\begin{mathpar}
+\inferrule*[Right=Lift]
+    {\Omega_1 \Rightarrow w : W_1 \and \Gamma, x : |W_1|; \Omega_2 \vdash C : W_2}
+    {\Gamma;\Omega_1, \Omega_2 \vdash x \Leftarrow \text{lift}~w;~ C : W_2}
+\end{mathpar}
 
 The COMPOSE rule lets you take the output wires of some circuit and use it in defining some continuation circuit.
 This is particularly useful in connecting unboxed circuits with gates.
+
+\begin{mathpar}
+\inferrule*[Right=Compose]
+    {\Gamma; \Omega_1 \vdash C_1 : W_1\and \Omega \Rightarrow w : W \and \Gamma;\Omega,\Omega_2 \vdash C_2 : W_2}
+    {\Gamma; \Omega_1, \Omega_2 \vdash w \leftarrow C_1;~ C_2 : W_2}
+\end{mathpar}
 
 Finally, we have the host level typing derivation, with the below shape.
 \begin{align*}
@@ -184,32 +300,7 @@ This typing rule forces the argument of \coqfont{run} to have no inputs by forci
     \label{fig:wire_type_der}
 \end{figure}
 
-\begin{figure}[t]
-\rulefiguresize
-\begin{mathpar}
-    \inferrule* [Right=Output]
-        {\Omega \Rightarrow p : W }
-        { \Gamma;\Omega \vdash \coqfont{output}(p) }
-    \and
-    \inferrule* [Right=Gate]
-        {\Omega_1 \Rightarrow p : W_1 \and \coqfont{g} \in \coqfont{gate}(W_1,W_2) \and \Gamma; x : W_2, \Omega_2 \vdash C : W}
-        {\Gamma;\Omega_1, \Omega_2\vdash x \leftarrow \coqfont{gate g p}; C : W }  
-    \and
-    \inferrule*[Right=Unbox]
-        {\Omega \Rightarrow p : W_1 \and \Gamma \vdash \coqfont{c} : \coqfont{Circ}(W_1,W_2)}
-        {\Gamma;\Omega\vdash \coqfont{unbox c p} : W_2 }  
-    \and
-    \inferrule*[Right=Compose]
-        {\Gamma; \Omega_1 \vdash C : W_1\and \Omega \Rightarrow p : W \and \Gamma;\Omega,\Omega_2 \vdash C' : W_2}
-        {\Gamma; \Omega_1, \Omega_1 \vdash p \leftarrow C; C' : W_2}
-    \and
-    \inferrule*[Right=Lift]
-        {\Omega_1 \Rightarrow p : W_1 \and \Gamma, x : |W_1|; \Omega_2 \vdash C : W_2}
-        {\Gamma;\Omega_1, \Omega_2 \vdash x \Leftarrow \coqfont{lift }p; C : W_2}
-\end{mathpar}
-    \caption{Inference rules for circuit typing derivation}
-    \label{fig:circuit_typ_der}
-\end{figure}
+
 
 \subsection{Functional Entanglement Implementation}
 

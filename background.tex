@@ -78,6 +78,7 @@ For example we take the tensor product of $\frac{\ket{0} + \ket{1}}{\sqrt{2}}$ a
 \begin{bmatrix} 1 / \sqrt{2} \\ 0 \\ 1 / \sqrt{2}  \\ 0 \end{bmatrix}
 \end{align*}
 \subsection{Quantum Entanglement}
+\label{sec:entangle}
 In multiple qubit systems, the complicated phenomenon of quantum entanglement arises.
 For a concrete example, let us consider a 2 qubit system, whose state can be modeled by unit vectors in \hil{4}.
 This system has the classical states $\ket{00}, \ket{01}, \ket{10}, and \ket{11}$ along with the equal superposition state.
@@ -92,6 +93,7 @@ $\ket{\phi}$ is also unique because it cannot be decomposed into the tensor prod
 	
 Entanglement allows us, in certain cases, to take a set of useful classical states and increase the probability of measuring them at the cost of probability of measuring useless classical states. \ls{I am not sure I have covered this topic enough, I am also not sure how much to foreground it}
 \subsection{Quantum Gates And Circuits}
+\label{sec:gates_circs}
 Now that we have a basic understanding of what a qubit is, we can talk more about the operations that we can perform on them.
 We have already discussed measurement, but measuring a state is only useful if we have carefully prepared it to have some useful properties already.
 How can we go from a normal classical state to some sort of usefully entangled one?
@@ -193,7 +195,7 @@ The QRAM model is an abstraction for quantum computing that maintains a distinct
 Each language discussed in this paper realizes this model of computation in some way.
 
 \subsection{Static and Dynamic Lifting}
-
+\label{sec:lifting}
 In some quantum algorithms, we do not want to measure an entire quantum state at once.
 We only want to measure some of its qubits, leaving others in some superposition.
 We then need to use the measured values to compute another circuit to apply to the residual quantum states.
