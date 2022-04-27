@@ -7,7 +7,7 @@
 }
 
 \newcommand{\hil}[1]{
-  $\mathbb{C}^{#1}$
+  \ensuremath{\mathbb{C}^{#1}}
 }
 
 %replace with some better monofont thing
@@ -25,6 +25,7 @@
 \newcommand{\unitt}{\coqfont{Unit}}
 \newcommand{\hoststep}{\rightarrow_{H}}
 \newcommand{\boxstep}{\rightarrow_{b}}
+\newcommand{\circstep}{\rightarrow_{C}}
 \newcommand{\thmbegin}{\begin{itemize} \end{itemize}}
 
 \newcommand{\dense}{\ensuremath{\rho}}
@@ -35,3 +36,8 @@
 \newcommand{\qrec}[4]{\text{let rec}~#1~#2=#3~\text{in}~#4}
 \newcommand{\lolli}{\multimap}
 \newcommand{\qubitt}{\ensuremath{\text{qubit}}}
+\newcommand{\qgeneq}{\preccurlyeq}
+\newcommand{\qgen}{\prec}
+\newcommand{\qcomplete}[2]{\ensuremath{#1~\text{is concrete for}~#2}}
+\newcommand{\subst}[2]{\{#1/#2\}}
+\newcommand{\denote}[1]{\ensuremath{\llbracket #1 \rrbracket}}
