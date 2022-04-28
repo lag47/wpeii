@@ -1,0 +1,80 @@
+\begin{figure}
+    \begin{syntax}
+        \category[Values]{v_1,...,v_n}
+            \alternative{c}
+            \alternative{x}
+            \alternative{\lambda x : \tau.e}
+            \alternative{\text{nil}}\\
+            \alternative{\text{Cons}(v_1,v_2)}
+            \alternative{(v_1,v_2)}
+        \category[Evaluation Contexts]{E}
+            \alternative{[\cdot]}
+            \alternative{E~e}
+            \alternative{v~E}\\
+            \alternative{\qif{E}{e_1}{e_2}}\\
+            \alternative{\text{Cons}(E,e)}
+            \alternative{\text{Cons}(v,E)}\\
+            \alternative{\qmatch{E}{e_1}{x}{y}{e_2}}\\
+            \alternative{(E,e)}
+            \alternative{(v,E)}\\
+            \alternative{\qlet{x}{y}{E}{e}}
+    \end{syntax}
+    \caption{Quantum Lambda Calculus values and evaluation contexts}
+\end{figure}
+\begin{figure}
+    \begin{mathpar}
+    \inferrule*[]{ }
+        {\detstep{(\lambda x : \tau. e)~v} {e\subst{v}{e}}}
+    \and 
+    \inferrule*[]{ }
+        {\detstep{\qrec{f}{x}{e_1}{e_2}}{e_2\subst{\lambda x.e_1\subst{\qrec{f}{x}{e_1}{e_1}}f}{f} }}%this doesn't seem right
+    \and
+    \inferrule*[]{ }
+        { \detstep{\qif{\text{true}}{e_1}{e_2}}{e_1}}
+    \and
+    \inferrule*[]{ }
+        { \detstep{\qif{\text{false}}{e_1}{e_2}}{e_2}}
+    \and
+    \inferrule*[]{ }
+        {\detstep{\qmatch{\text{nil}}{e_1}{x}{y}{e_2}}{e_1}}
+    \and
+    \inferrule*[]{ }
+        {\detstep{\qmatch{\text{Cons}(v_1,v_2)}{e_1}{x}{y}{e_3}}
+            {e_3\subst{v_1}{x}\subst{v_2}{y}}}
+    \and
+    \inferrule*[]
+        { }
+        {\detstep
+            {\qlet{x}{y}{(v_1,v_2)}{e}}
+            {e\subst{v_1}{x}\subst{v_2}{y}}}
+    \and\\
+    \inferrule*[]
+        {[Q,X,e] \qstep{p} [Q',X',e'] }
+        {[Q,X,E[e]] \qstep{p} [Q',X',E[e']]}
+    \and\\
+    \inferrule*[]{Q~\text{evolves to}~Q'~\text{when}~g~\text{is applied to qubits}~(x_{j_1},...,x_{j_k})}
+        {[Q,X, g (x_{j_1},...,x_{j_k})] \qstep{1} [Q',X, (x_{j_1},...,x_{j_k})]}
+    \and
+    \inferrule*[]
+        {Q_0~\text{is a superposition of states where the}~i\text{th index is 0}\\ 
+        Q_1~\text{is a superposition of states where the}~i\text{th index is 1}
+        }
+        {[\alpha Q_0 + \beta Q_1,X,\text{meas}~x_i] \qstep{|\alpha|^2}[Q_0,X,0]}
+    \and
+    \inferrule*[]
+        {Q_0~\text{is a superposition of states where the}~i\text{th index is 0}\\ 
+        Q_1~\text{is a superposition of states where the}~i\text{th index is 1}
+        }
+        {[\alpha Q_0 + \beta Q_1,X,\text{meas}~x_i] \qstep{|\beta|^2}[Q_1,X,1]}
+    \and
+    \inferrule*[]
+        { }
+        {[Q,X,\text{new}~0] \qstep{1} [Q\otimes \ket{0},\ket{x_1,...,x_n,x_{n+1}}, x_{n+1}]}
+    \and
+    \inferrule*[]
+        { }
+        {[Q,X,\text{new}~1] \qstep{1} [Q\otimes \ket{1},\ket{x_1,...,x_n,x_{n+1}}, x_{n+1}] }
+    \end{mathpar}
+    \caption{Quantum Lambda Calculus Operational Semantics}
+    \label{fig:qcalc_op}
+    \end{figure}

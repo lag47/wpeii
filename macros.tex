@@ -34,6 +34,9 @@
 \newcommand{\qlet}[4]{\text{let}~(#1,#2)=#3~\text{in}~#4}
 \newcommand{\qif}[3]{\text{if}~#1~\text{then}~#2~\text{else}~#3}
 \newcommand{\qrec}[4]{\text{let rec}~#1~#2=#3~\text{in}~#4}
+\newcommand{\qstep}[1]{\ensuremath{\Rightarrow_{#1}}}
+\newcommand{\detstep}[2]{[Q,X,#1]\qstep{1}[Q,X,#2]}
+
 \newcommand{\lolli}{\multimap}
 \newcommand{\qubitt}{\ensuremath{\text{qubit}}}
 \newcommand{\qgeneq}{\preccurlyeq}

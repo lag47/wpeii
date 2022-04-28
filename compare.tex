@@ -42,7 +42,17 @@ The purely unitary circuits could then be denoted as unitary matrices, making th
 There are many more quantum programming languages being used. 
 Much like QWIRE, Quipper~\cite{quipper} and \liquid~\cite{liquid} both embed circuit descriptions in a functional language, representing circuits as datastructures in the host language.
 Quipper is embedded in Haskell, and \liquid is embedded in F\#.
-The Qiskit~\cite{qiskit}, Cirq~\cite{cirq}, and Q\#~\cite{qsharp} languages are all embedded in Python and represent quantump circuits as sequences of imperative operations on qubits.
+Quipper makes extensive use of Haskell's typeclass.
+In Quipper, there is a typeclass \inlinecoq{QData} with instances for types like tuples or lists of qubits.
+Quipper also provides a \inlinecoq{Circ} type constructor that is a valid monad.
+A quantum circuit with input type \inlinecoq{A} and ouput type \inlinecoq{B} is represented as a function \inlinecoq{A -> Circ B}.
+In Quipper, the programmer can compose circuits using the \inlinecoq{bind} operation.
+In \liquid, qubits is implemented as an \emph{opaque type} that can only interact with the rest of the environment via a limited interface.
+These opaque types also form a monad, although this is not stressed as it is in Quipper, as monads are a bigger part of idiomatic Haskell than they are of idiomatic F\#.
+The interface allows for the creation of circuits which can then be passed around like normal values.
+Neither Quipper nor \liquid use linear types to prevent cloning, opting instead to use dynamic checks.
+
+The Qiskit~\cite{qiskit}, Cirq~\cite{cirq}, and Q\#~\cite{qsharp} languages are all imperative languages embedded in Python and represent quantum circuits as sequences of imperative operations on qubits.
 They are the primary quantum programming languages of IBM, Google, and Microsoft respectively
 None of the listed languages use linear types, instead opting either for running static analyses at compile time or throwing exceptions at runtime if a circuit attempts to clone a qubit.
 The QASM language~\cite{qasm} is a low level circuit description language that seeks to be an intermediate language representation for higher level languages to target.
@@ -52,6 +62,5 @@ In Qwire particularly, there is a body of work on program and program transforma
 Researchers also use rich type systems to capture complex, quantum specific program properties.
 \citet{twist} designed a type system for keeping track of purity and entanglement, and \citet{gottesmanex} developed Gottesman types as a way to characterize quantum circuits as transformations between eigenvector bases which also allows you to track entanglement.
 
-\todo{consider beefing this up a bunch, maybe a full page or two}
 
 %Liquid qasm q# q* qiskit do a forward lit review
