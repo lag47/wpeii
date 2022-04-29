@@ -3363,6 +3363,37 @@ keywords = {Iris, Program Logics, Information-Flow Control, Logical Relations}
   month = jun,
   doi = {10.1109/CSF.2019.00026},
 }
+ 
+ @inproceedings{qwire, 
+  address={Paris France}, 
+  title={QWIRE: a core language for quantum circuits}, 
+  ISBN={978-1-4503-4660-3}, 
+  url={https://dl.acm.org/doi/10.1145/3009837.3009894}, 
+  DOI={10.1145/3009837.3009894}, 
+  abstractNote={This paper introduces QWIRE (“choir”), a language for deﬁning quantum circuits and an interface for manipulating them inside of an arbitrary classical host language. QWIRE is minimal—it contains only a few primitives—and sound with respect to the physical properties entailed by quantum mechanics. At the same time, QWIRE is expressive and highly modular due to its relationship with the host language, mirroring the QRAM model of computation that places a quantum computer (controlled by circuits) alongside a classical computer (controlled by the host language).}, 
+  booktitle={Proceedings of the 44th ACM SIGPLAN Symposium on Principles of Programming Languages}, 
+  publisher={ACM}, 
+  author={Paykin, Jennifer and Rand, Robert and Zdancewic, Steve}, 
+  year={2017}, 
+  month={Jan}, 
+  pages={846–858}, 
+  language={en} }
+
+ @inbook{qlc, 
+  address={Cambridge}, 
+  title={Quantum Lambda Calculus}, 
+  ISBN={978-1-139-19331-3}, 
+  url={https://www.cambridge.org/core/product/identifier/CBO9781139193313A011/type/book_part}, 
+  DOI={10.1017/CBO9781139193313.005}, 
+  abstractNote={We discuss the design of a typed lambda calculus for quantum computation. After a brief discussion of the role of higher-order functions in quantum information theory, we deﬁne the quantum lambda calculus and its operational semantics. Safety invariants, such as the no-cloning property, are enforced by a static type system that is based on intuitionistic linear logic. We also describe a type inference algorithm, and a categorical semantics.}, 
+  booktitle={Semantic Techniques in Quantum Computation}, 
+  publisher={Cambridge University Press}, 
+  author={Selinger, Peter and Valiron, Benoît}, 
+  editor={Gay, Simon and Mackie, Ian}, 
+  year={2009}, 
+  pages={135–172}, 
+  language={en} }
+
 
  @article{qwirepractice, 
   title={QWIRE Practice: Formal Verification of Quantum Circuits in Coq}, 
@@ -3413,8 +3444,41 @@ keywords = {Iris, Program Logics, Information-Flow Control, Logical Relations}
   publisher={Springer}
 }
 
+@article{crypto,
+author = {Bruss, Dagmar and Erd\'{e}lyi, G\'{a}bor and Meyer, Tim and Riege, Tobias and Rothe, J\"{o}rg},
+title = {Quantum Cryptography: A Survey},
+year = {2007},
+issue_date = {2007},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {39},
+number = {2},
+issn = {0360-0300},
+url = {https://doi.org/10.1145/1242471.1242474},
+doi = {10.1145/1242471.1242474},
+abstract = {We survey some results in quantum cryptography. After a brief introduction to classical cryptography, we provide the quantum-mechanical background needed to present some fundamental protocols from quantum cryptography. In particular, we review quantum key distribution via the BB84 protocol and its security proof, as well as the related quantum bit commitment protocol and its proof of insecurity.},
+journal = {ACM Comput. Surv.},
+month = {jul},
+pages = {6–es},
+numpages = {27},
+keywords = {quantum cryptography, Quantum bit commitment, quantum key distribution}
+}
+
+ @article{qchem, 
+  title={Quantum Chemistry in the Age of Quantum Computing}, volume={119}, ISSN={0009-2665}, DOI={10.1021/acs.chemrev.8b00803}, number={19}, journal={Chemical Reviews}, publisher={American Chemical Society}, author={Cao, Yudong and Romero, Jonathan and Olson, Jonathan P. and Degroote, Matthias and Johnson, Peter D. and Kieferová, Mária and Kivlichan, Ian D. and Menke, Tim and Peropadre, Borja and Sawaya, Nicolas P. D. and Sim, Sukin and Veis, Libor and Aspuru-Guzik, Alán}, year={2019}, month={Oct}, pages={10856–10915} }
+
+
  @article{twist, 
   title={Twist: sound reasoning for purity and entanglement in Quantum programs}, volume={6}, ISSN={2475-1421}, DOI={10.1145/3498691}, abstractNote={CHARLES YUAN, MIT CSAIL, USA CHRISTOPHER MCNALLY, MIT RLE, USA MICHAEL CARBIN, MIT CSAIL, USA Quantum programming languages enable developers to implement algorithms for quantum computers that promise computational breakthroughs in classically intractable tasks. Programming quantum computers requires awareness of entanglement, the phenomenon in which measurement outcomes of qubits are correlated. Entanglement can determine the correctness of algorithms and suitability of programming patterns. In this work, we formalize purity as a central tool for automating reasoning about entanglement in quantum programs. A pure expression is one whose evaluation is unaffected by the measurement outcomes of qubits that it does not own, implying freedom from entanglement with any other expression in the computation. We present Twist, the first language that features a type system for sound reasoning about purity. The type system enables the developer to identify pure expressions using type annotations. Twist also features purity assertion operators that state the absence of entanglement in the output of quantum gates. To soundly check these assertions, Twist uses a combination of static analysis and runtime verification. We evaluate Twist’s type system and analyses on a benchmark suite of quantum programs in simulation, demonstrating that Twist can express quantum algorithms, catch programming errors in them, and support programs that existing languages disallow, while incurring runtime verification overhead of less than 3.5%. CCS Concepts: • Computer systems organization → Quantum computing; • Theory of computation → Denotational semantics; • Software and its engineering → Formal language definitions; Language features.}, number={POPL}, journal={Proceedings of the ACM on Programming Languages}, author={Yuan, Charles and McNally, Christopher and Carbin, Michael}, year={2022}, month={Jan}, pages={1–32}, language={en} }
 
  @article{gottesmanex, 
   title={Extending Gottesman Types Beyond the Clifford Group}, author={Rand, Robert and Sundaram, Aarthi and Singhal, Kartik and Lackey, Brad}, pages={6}, language={en} }
+
+@article{quantsup,
+title	= {Quantum Supremacy Is Both Closer and Farther than It Appears},
+author	= {Igor Markov and Aneeqa Fatima and Sergei Isakov and Sergio Boixo},
+year	= {2018},
+URL	= {https://arxiv.org/abs/1807.10749},
+journal	= {arxiv (not yet submitted)}
+}
+
