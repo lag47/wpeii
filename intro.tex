@@ -1,20 +1,22 @@
-Quantum computers are quickly becoming larger and more practical\todo{cite}.
-Practical quantum computation promises to revolutionize many fields of computer science, including cryptography \todo{cite} and computational chemistry \todo{cite}.
-However, quantum programs are hard to write and even harder to write correctly.
-Quantum physics concepts, like quantum superposition, entanglement, and the quantum no cloning theorem, don't map cleanly onto our intuitions of computation, and quantum algorithms rely on leveraging these concepts to outperform classical algorithm.
-There is a large gap between the way quantum algorithms are specified in papers and the way they can actually be written directly on real quantum computers.
+\todo{this needs an edit pass}
+Quantum computers are quickly larger, and more reliable\cite{quantsup}.
+Practical quantum computers promise to revolutionize many fields of computer science, including cryptography~\cite{crypto} and computational chemistry~\cite{qchem}, by allowing the implementation of quantums algorithms that are asymptotically faster than any known classical algorithm for certain problems.
+However, quantum algorithms are hard to write and even harder to write correctly.
+Quantum physics concepts, like quantum superposition, entanglement, and the quantum no-cloning theorem, don't map cleanly onto the intuitions of classical computation, and quantum algorithms rely on leveraging these concepts to outperform classical algorithms.
+There is also a large gap between the way quantum algorithms are specified in papers and the way they can actually be written directly on real quantum computers.
+Quantum algorithms papers are written at a high level of abstraction while programming on real quantum computers requires a lot of low level reasoning.
 
 This is exactly the kind of situation that programming languages research is intended to address.
-The tools that come out of programming languages research are designed to help us manage complex concerns by providing us the proper abstractions and sometimes preventing us from shooting ourselves in the foot.
-And there is an impressive body of work in the space of programming languages for quantum computing.
+The tools that come out of programming languages research are designed to help programmers manage complex concerns by providing the proper abstractions preventing some invalid behaviors.
+There is an impressive body of work in the space of programming languages for quantum computing.
 However, this research can be difficult to approach for a programming languages researcher who does not already know a lot about quantum computation.
-Broadly speaking, this paper is written to help such programming languages researchers.
-In particular, this paper will cover the Quantum Lambda Calculus and Qwire programming languages.
+Broadly speaking, this paper is written to help such programming languages researchers understand the basics of quantum programming and two existing quantum programming languages.
+In particular, this paper will cover the Quantum Lambda Calculus~\cite{qlc} and Qwire~\cite{qwire} programming languages.
 Both of these languages are linearly typed, functional programming languages that are designed to write quantum algorithms.
 
 This paper aims to teach readers about three things:
 \begin{enumerate}
     \item the basics of quantum computation, in particular enough to understand a significant abstraction in real quantum algorithms,
-    \item the Quantum Lambda Calculus, how its syntax and semantics work and how to write programs in it,
-    \item and Qwire, how its syntax and semantics work and how to write programs in it.
+    \item the Quantum Lambda Calculus, how its types and semantics work and how to write programs in it,
+    \item and Qwire, how its types and semantics work and how to write programs in it.
 \end{enumerate}
